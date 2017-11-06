@@ -1,0 +1,15 @@
+{
+  "name": "pingry-api-server",
+  "version": "1.0.0",
+  "description": "Express Server for the Pingry API",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Alex Strasser",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}

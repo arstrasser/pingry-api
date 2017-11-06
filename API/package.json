@@ -1,0 +1,14 @@
+{
+  "name": "pingry-api",
+  "version": "1.0.0",
+  "description": "An API for Pingry services",
+  "main": "api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alex Strasser",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.83.0"
+  }
+}
