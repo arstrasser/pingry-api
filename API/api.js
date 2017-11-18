@@ -364,6 +364,7 @@ exports.PAPI = class {
         otherNewsRequestDone = true;
       }
     });
+    
     makeRequest(newsURL2+Date.now(), res => {
       this.news = this.news.concat(feedParse.parseRSS(res));
       if(otherNewsRequestDone){
@@ -399,6 +400,8 @@ exports.PAPI = class {
                 for(let x = 0; x < menuItems[i][j][k].length; x++){
                   if(opStations[k][x]){
                     this.myMenu[i][j].push([]);
+
+                    //For each meal of each station
                     for(let y = 0; y < menuItems[i][j][k][x].length; y++){
                       this.myMenu[i][j][x].push(menuItems[i][j][k][x][y].t);
                     }
