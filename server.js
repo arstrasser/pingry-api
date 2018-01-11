@@ -2,8 +2,30 @@ const port = 3000;
 
 let pingry = new (require("./api/api").PAPI)();
 const express = require('express');
+const helmet = require('helmet')
+const rateLimit = require('express-rate-limit');
 
 let app = new express();
+app.use(helmet());
+
+let apiKeys = require("./api_keys").keys;
+let limiter = new rateLimit({
+  windowMs: 15*60*1000, // 15 minutes
+  delayAfter: 50,
+  max: 200,
+  delayMs: 1000
+});
+
+let auth = (req, res, next) => {
+  if(apiKeys.includes(req.query.api_key)) {
+    return next();
+  }
+  else {
+    res.status(401).send("Unauthorized");
+  }
+}
+
+app.use(auth);
 
 app.get("/schedule", (req, res) => {
   if(req.query.date){
@@ -64,7 +86,6 @@ app.get("/lunch", (req, res) => {
 });
 
 pingry.refresh(()=>{
-  //console.log(pingry.getLetterForDate(new Date(Date.now()-1000*60*60*24*2)));
   app.listen(port, () => {
     console.log("Server started on port "+port+".");
   });
