@@ -1,13 +1,17 @@
-//Alex Strasser
+/**
+ * @file Javascript class file for the Pingry API
+ * @author Alex Strasser
+ * @version 2018.01.14
+ */
 
 //Configuration Constants:
 const collabDatesURL =     "https://www.pingry.org/calendar/calendar_388.ics";
 const specialScheduleURL = "https://calendar.google.com/calendar/ical/pingry.org_kg3ab8ps5pa70oj41igegj9kjo%40group.calendar.google.com/public/basic.ics";
 const letterDayURL =       "https://www.pingry.org/calendar/calendar_384.ics";
-const remoteOverrideURL =  "https://mirror.pingry.k12.nj.us/software/RemoteConfig.json?d=";
+const remoteOverrideURL =  "http://mirror.pingry.k12.nj.us/software/RemoteConfig.json?d=";
 const announcementsURL =   "https://www.pingry.org/rss.cfm?news=16&d=";
-const newsURL1 =           "http://www.pingry.org/rss.cfm?news=13&d=";
-const newsURL2 =           "http://www.pingry.org/rss.cfm?news=14&d=";
+const newsURL1 =           "https://www.pingry.org/rss.cfm?news=13&d=";
+const newsURL2 =           "https://www.pingry.org/rss.cfm?news=14&d=";
 const lunchURL =           "http://www.sagedining.com/intranet/apps/mb/pubasynchhandler.php?unitId=S0091&mbMenuCardinality=0&_=";
 
 
@@ -79,6 +83,10 @@ exports.PAPI = class {
     }
     //Returns -1 if it can't find it
     return -1;
+  }
+
+  getScheduledEvents(){
+    return this.scheduledEvents;
   }
 
   getLetterForDate(d) {
@@ -153,14 +161,15 @@ exports.PAPI = class {
 
   refresh(callback){
     var counter = 0;
-    function makeRequest(url, callback){
+    function makeRequest(url, callback2){
       counter++;
       request(url, (err, res, body) => {
+        console.log(url);
         if(err){
           console.error(err);
         }
         console.log('Status Code:', res.statusCode);
-        callback(body);
+        callback2(body);
         counter--;
         checkIfDone();
       });
@@ -199,7 +208,7 @@ exports.PAPI = class {
           }
         }
 
-        console.log("DONE!");
+        console.log("API Refreshed!");
         if(callback){
           callback();
         }
@@ -298,8 +307,8 @@ exports.PAPI = class {
               }
               //Unknown assembly
               else{
-                console.warn("Unknown Assembly:");
-                console.log(calEvents[i]);
+                //console.warn("Unknown Assembly:");
+                //console.log(calEvents[i]);
                 specialSchedule[dfp.dateToDayString(calEvents[i].endTime)] = "Unknown Assembly";
               }
             }
@@ -321,8 +330,8 @@ exports.PAPI = class {
         }
         else{
           //Unknown event type
-          console.log("Unknown type: ");
-          console.log(calEvents[i]);
+          //console.log("Unknown type: ");
+          //console.log(calEvents[i]);
         }
       }
       this.scheduledEvents = {CT, CP};
@@ -330,7 +339,6 @@ exports.PAPI = class {
     });
 
     makeRequest(letterDayURL, (res) => {
-      console.log("Letter Days");
       let calEvents = feedParse.parseCalendar(res);
       //Iterate through calendar events
       for(let i = 0; i < calEvents.length; i++){
@@ -364,7 +372,7 @@ exports.PAPI = class {
         otherNewsRequestDone = true;
       }
     });
-    
+
     makeRequest(newsURL2+Date.now(), res => {
       this.news = this.news.concat(feedParse.parseRSS(res));
       if(otherNewsRequestDone){
