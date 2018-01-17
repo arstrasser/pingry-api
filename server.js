@@ -32,7 +32,8 @@ let limiter = new rateLimit({
 });
 
 let logger = (req) => {
-  console.log(req.method+" "+req.originalUrl+": "+req.user+" ("+req.ip+")");
+  console.log(new Date().toISOString()+": "+req.method+
+  " "+req.originalUrl+" - "+req.user+"@"+req.ip);
 };
 
 //Auth middleware that ensures the user has the required permissions.
