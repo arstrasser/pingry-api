@@ -70,7 +70,7 @@ let auth = (requiredPermissions) => {
 //Express Routes
 app.get("/schedule", auth([]), (req, res) => {
   if(req.query.date){
-    res.json(pingry.getScheduleForDate(new Date(req.query.date)));
+    res.json(pingry.getScheduleForDate(req.query.date));
   }
   else if(req.query.type){
     for(var i = 0; i < pingry.typeList.length; i++){

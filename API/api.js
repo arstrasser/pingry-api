@@ -90,7 +90,7 @@ exports.PAPI = class {
   }
 
   getLetterForDate(d) {
-    let index = this.getLetterIndexOf(dfp.dateToDayString(d));
+    let index = this.getLetterIndexOf(d);
     if(index != -1){
       return this.letterTimes[index];
     }
@@ -99,9 +99,9 @@ exports.PAPI = class {
 
   getScheduleForDate(d){
     //If there is a special schedule
-    if(this.scheduledDays != null && this.scheduledDays[dfp.dateToDayString(d)] != undefined){
-      if(this.scheduledDays[dfp.dateToDayString(d)] == "manual"){
-        const override = this.override.scheduleOverride[dfp.dateToDayString(d)];
+    if(this.scheduledDays != null && this.scheduledDays[d] != undefined){
+      if(this.scheduledDays[d] == "manual"){
+        const override = this.override.scheduleOverride[d];
         if(override && override.type == "manual"){
           return {schedule: override.classes, name: "manual"};
         }
@@ -111,13 +111,13 @@ exports.PAPI = class {
       }
       else {
         //Iterate over the schedule types
-        for(let i = 0; i < typeList.length; i++){
+        for(let i = 0; i < this.typeList.length; i++){
           //If found the respective schedule for the day
-          if(this.typeList[i].name == this.scheduledDays[dfp.dateToDayString(d)]){
+          if(this.typeList[i].name == this.scheduledDays[d]){
             return {schedule: this.typeList[i].schedule, name: this.typeList[i].name};
           }
         }
-        console.error("Couldn't find schedule: "+this.scheduledDays[this.dfp.dateToDayString(d)]);
+        console.error("Couldn't find schedule: "+this.scheduledDays[d]);
       }
     }
 
