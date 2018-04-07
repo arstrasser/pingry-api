@@ -173,7 +173,6 @@ exports.PAPI = class {
           console.error("ERROR fetching: "+url);
           console.error(err);
         }else {
-          console.log(res);
           console.warn("Couldn't fetch "+url);
           console.log('Status Code:', res.statusCode);
         }
