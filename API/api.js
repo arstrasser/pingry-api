@@ -163,8 +163,9 @@ exports.PAPI = class {
     var counter = 0;
     function makeRequest(url, callback2){
       counter++;
-      request(url, (err, res, body) => {
-
+      request({url, headers:{
+        "User-Agent":"Mozilla/5.0"
+      }}, (err, res, body) => {
         if(!err && res.statusCode && res.statusCode == 200){
           callback2(body);
         }
@@ -172,6 +173,7 @@ exports.PAPI = class {
           console.error("ERROR fetching: "+url);
           console.error(err);
         }else {
+          console.log(res);
           console.warn("Couldn't fetch "+url);
           console.log('Status Code:', res.statusCode);
         }
