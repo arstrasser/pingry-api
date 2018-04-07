@@ -1,7 +1,7 @@
 /**
  * @file Javascript class file for the Pingry API
  * @author Alex Strasser
- * @version 2018.01.14
+ * @version 2018.04.07
  */
 
 //Configuration Constants:
@@ -164,12 +164,17 @@ exports.PAPI = class {
     function makeRequest(url, callback2){
       counter++;
       request(url, (err, res, body) => {
-        console.log(url);
-        if(err){
-          console.error(err);
+
+        if(!err && res.statusCode && res.statusCode == 200){
+          callback2(body);
         }
-        console.log('Status Code:', res.statusCode);
-        callback2(body);
+        else if(err){
+          console.error("ERROR fetching: "+url);
+          console.error(err);
+        }else {
+          console.warn("Couldn't fetch "+url);
+          console.log('Status Code:', res.statusCode);
+        }
         counter--;
         checkIfDone();
       });
@@ -207,8 +212,6 @@ exports.PAPI = class {
             this.scheduledEvents.CP[i] = this.override.eventsOverride.CP[i];
           }
         }
-
-        console.log("API Refreshed!");
         if(callback){
           callback();
         }
