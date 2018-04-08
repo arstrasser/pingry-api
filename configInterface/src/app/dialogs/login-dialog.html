@@ -1,0 +1,9 @@
+<h1 mat-dialog-title>Please enter a valid API key:</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <input matInput [(ngModel)]="key">
+  </mat-form-field>
+</div>
+<div>
+  <button mat-raised-button color="primary" (click)="close()">Submit</button>
+</div>

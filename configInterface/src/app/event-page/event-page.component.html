@@ -1,0 +1,66 @@
+<div class="event-page">
+  <form class="ct-form" style="margin-top:20px">
+    <h2 class="mat-h2" style="padding:5px 30px">Community Time Events</h2>
+    <mat-table #table [dataSource]="ctDataSource">
+      <ng-container matColumnDef="date">
+        <mat-header-cell *matHeaderCellDef> Date </mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <input matInput [matDatepicker]="picker" [value]="getDateFromString(element.date)" (dateChange)="onDateChange(element, $event, true)">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="event">
+        <mat-header-cell *matHeaderCellDef>Event</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <input matInput type="text" [(ngModel)]="element.event" (change)="onValueChange(element, $event, true)" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+          <button type="button" (click)="removeItem(element, true)" mat-icon-button *ngIf="!element.temp">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button type="button" (click)="addItem(element, true)" mat-icon-button *ngIf="element.temp">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="columns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columns;"></mat-row>
+    </mat-table>
+  </form>
+  <form class="cp-form" style="margin-top:40px">
+    <h2 class="mat-h2" style="padding:5px 30px">Conference Period Events</h2>
+    <mat-table #table [dataSource]="cpDataSource">
+      <ng-container matColumnDef="date">
+        <mat-header-cell *matHeaderCellDef> Date </mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <input matInput [matDatepicker]="picker" [value]="getDateFromString(element.date)" (dateChange)="onDateChange(element, $event, false)">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="event">
+        <mat-header-cell *matHeaderCellDef>Event</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <input matInput type="text" [(ngModel)]="element.event" (change)="onValueChange(element, $event, false)" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+          <button type="button" (click)="removeItem(element, false)" mat-icon-button *ngIf="!element.temp">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button type="button" (click)="addItem(element, false)" mat-icon-button *ngIf="element.temp">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="columns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columns;"></mat-row>
+    </mat-table>
+  </form>
+</div>

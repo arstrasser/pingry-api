@@ -1,0 +1,35 @@
+<div class="letter-page">
+  <form class="letter-form">
+    <mat-table #table [dataSource]="dataSource">
+      <ng-container matColumnDef="date">
+        <mat-header-cell *matHeaderCellDef>Date</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <input matInput [matDatepicker]="picker" [value]="getDateFromString(element.date)" (dateChange)="onDateChange(element, $event)">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="letter">
+        <mat-header-cell *matHeaderCellDef>Letter</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <mat-select [(value)]="element.letter" (change)="onValueChange(element)">
+              <mat-option *ngFor="let option of letterOptions" [value]="option.value">{{option.title}}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button type="button" (click)="removeItem(element)" mat-icon-button *ngIf="!element.temp">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button type="button" (click)="addItem(element)" mat-icon-button *ngIf="element.temp">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="columns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columns;"></mat-row>
+    </mat-table>
+  </form>
+</div>
