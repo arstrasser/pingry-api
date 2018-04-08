@@ -17,10 +17,14 @@ const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const fs = require("fs");
+const path = require('path');
+const bodyParser = require('body-parser');
+
 
 //App setup
 let app = new express();
-app.use(helmet());
+
+app.use(bodyParser.json());
 
 let apiKeys = JSON.parse(fs.readFileSync("./api_keys.json"));
 
@@ -30,6 +34,7 @@ let limiter = new rateLimit({
   max: 200,
   delayMs: 1000
 });
+app.use(helmet(limiter));
 
 let logger = (req) => {
   console.log(new Date().toISOString()+": "+req.method+
@@ -41,25 +46,28 @@ let auth = (requiredPermissions) => {
   return (req, res, next) => {
     for(let i = 0; i < apiKeys.length; i++){
       if(apiKeys[i].key == req.query.api_key) {
-
         let authSuccess = () => {
           req.user = apiKeys[i].owner;
           logger(req);
           return next();
         };
 
-        userPermissions = apiKeys[i].permissions;
-        for(let j = 0; j < userPermissions.length; j++){
-          if(userPermissions[j] === "full"){
-            return authSuccess();
-          }
-          for(let k = 0; k < requiredPermissions.length; k++){
-            if(userPermissions[j] == requiredPermissions[k]){
-              return authSuccess();
+        var userPermissions = apiKeys[i].permissions;
+        if(userPermissions.includes("full")){
+          return authSuccess();
+        }
+
+        for(let j = 0; j < requiredPermissions.length; j++){
+          var found = false;
+          for(let k = 0; k < userPermissions.length; k++){
+            if(userPermissions[k] === requiredPermissions[j]){
+              found = true;
+              break;
             }
           }
+          if(!found) return res.status(401).send("Unauthorized");
         }
-        return res.status(401).send("Unauthorized");
+        return authSuccess();
 
       }
     }
@@ -67,8 +75,20 @@ let auth = (requiredPermissions) => {
   };
 };
 
-//Express Routes
-app.get("/schedule", auth([]), (req, res) => {
+app.get("/testPermission", (req, res, next) => {
+  return auth([req.query.permission])(req, res, next);
+}, (req, res) => {
+  res.status(200).send("Authorized");
+})
+
+app.use("/configuration/", express.static(path.join(__dirname, 'config_build')))
+
+app.get("/configuration/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "config_build", "index.html"));
+})
+
+//API routes
+app.get("/schedule", auth(["basic"]), (req, res) => {
   if(req.query.date){
     res.json(pingry.getScheduleForDate(req.query.date));
   }
@@ -86,15 +106,15 @@ app.get("/schedule", auth([]), (req, res) => {
   }
 });
 
-app.get("/schedule/types", auth([]), (req, res) => {
+app.get("/schedule/types", auth(["basic"]), (req, res) => {
   res.json(pingry.typeList);
 });
 
-app.get("/schedule/events", auth([]), (req, res) => {
+app.get("/schedule/events", auth(["basic"]), (req, res) => {
   res.json(pingry.getScheduledEvents());
 });
 
-app.get("/schedule/events/CT", auth([]), (req, res) => {
+app.get("/schedule/events/CT", auth(["basic"]), (req, res) => {
   if(req.query.date){
     if(pingry.getScheduledEvents().CT.hasOwnProperty(req.query.date)){
       res.json(pingry.getScheduledEvents().CT[req.query.date]);
@@ -106,7 +126,7 @@ app.get("/schedule/events/CT", auth([]), (req, res) => {
   }
 });
 
-app.get("/schedule/events/CP", auth([]), (req, res) => {
+app.get("/schedule/events/CP", auth(["basic"]), (req, res) => {
   if(req.query.date){
     if(pingry.getScheduledEvents().CP.hasOwnProperty(req.query.date)){
       res.json(pingry.getScheduledEvents().CP[req.query.date]);
@@ -118,7 +138,7 @@ app.get("/schedule/events/CP", auth([]), (req, res) => {
   }
 });
 
-app.get("/letter", auth([]), (req, res) => {
+app.get("/letter", auth(["basic"]), (req, res) => {
   if(req.query.date){
     const index = pingry.getLetterIndexOf(req.query.date);
     if(index > -1){
@@ -138,25 +158,45 @@ app.get("/letter", auth([]), (req, res) => {
   }
 });
 
-app.get("/announcements", auth([]), (req, res) => {
+app.get("/announcements", auth(["basic"]), (req, res) => {
   res.json(pingry.getAnnouncements());
 });
 
-app.get("/news", auth([]), (req, res) => {
+app.get("/news", auth(["basic"]), (req, res) => {
   res.json(pingry.getNews());
 });
 
-app.get("/ddd", auth([]), (req, res) => {
+app.get("/ddd", auth(["basic"]), (req, res) => {
   res.json(pingry.getDDDSchedule());
 });
 
-app.get("/lunch", auth([]), (req, res) => {
+app.get("/lunch", auth(["basic"]), (req, res) => {
   if(req.query.date){
     res.json(pingry.getMenuForDate(req.query.date));
   }else{
     res.json(pingry.getLunchMenu());
   }
 });
+
+app.get("/override", auth(["basic"]), (req, res) => {
+  res.json(pingry.getOverride());
+})
+
+app.post("/updateOverride", auth(["admin"]), (req, res) => {
+  try {
+    var newOverride = JSON.parse(req.body.newJSON);
+    fs.writeFile("RemoteConfig.json", req.body.newJSON, (err) => {
+      if(err){
+        console.error("Error updating remote override file:");
+        console.error(err);
+        return res.status(500).send("Error saving to file");
+      }
+      pingry.refresh(() => {
+        return res.status(200).send("Success");
+      });
+    })
+  }catch(e){ return res.status(400).send("Error parsing JSON")}
+})
 
 //Refresh from the API, then load the server
 pingry.refresh(()=>{

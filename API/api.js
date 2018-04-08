@@ -8,7 +8,7 @@
 const collabDatesURL =     "https://www.pingry.org/calendar/calendar_388.ics";
 const specialScheduleURL = "https://calendar.google.com/calendar/ical/pingry.org_kg3ab8ps5pa70oj41igegj9kjo%40group.calendar.google.com/public/basic.ics";
 const letterDayURL =       "https://www.pingry.org/calendar/calendar_384.ics";
-const remoteOverrideURL =  "http://mirror.pingry.k12.nj.us/software/RemoteConfig.json?d=";
+//const remoteOverrideURL =  "http://mirror.pingry.k12.nj.us/software/RemoteConfig.json?d="; REMOTE OVERRIDE NOW STORED LOCALLY
 const announcementsURL =   "https://www.pingry.org/rss.cfm?news=16&d=";
 const newsURL1 =           "https://www.pingry.org/rss.cfm?news=13&d=";
 const newsURL2 =           "https://www.pingry.org/rss.cfm?news=14&d=";
@@ -141,6 +141,10 @@ exports.PAPI = class {
     return this.override.ddd;
   }
 
+  getOverride(){
+    return this.override;
+  }
+
   getLunchMenu(){
     return this.myMenu;
   }
@@ -168,8 +172,7 @@ exports.PAPI = class {
       }}, (err, res, body) => {
         if(!err && res.statusCode && res.statusCode == 200){
           callback2(body);
-        }
-        else if(err){
+        }else if(err){
           console.error("ERROR fetching: "+url);
           console.error(err);
         }else {
@@ -221,7 +224,7 @@ exports.PAPI = class {
 
     this.refreshing = true;
     counter++;
-    fs.readFile(path.join(__dirname, "scheduleTypes.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "scheduleTypes.json"), (err, data) =>{
       if(err){
         console.warn(err);
       }else{
@@ -358,8 +361,11 @@ exports.PAPI = class {
       }
     });
 
-    makeRequest(remoteOverrideURL+Date.now(), (res) => {
-      this.override = JSON.parse(res);
+    counter++;
+    fs.readFile(path.join(__dirname, "..", "RemoteConfig.json"), (err, data) =>{
+      this.override = JSON.parse(data);
+      counter--;
+      checkIfDone();
     });
 
     makeRequest(announcementsURL+Date.now(), res => {

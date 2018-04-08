@@ -17,8 +17,8 @@ prompt.get([{
   for(let i = 0; i < 40; i++){
     key += chars[Math.floor(Math.random()*chars.length)];
   }
-  keys.push({key, owner:result.owner, permissions:["full"]});
+  keys.push({key, owner:result.owner, permissions:["basic"]});
   console.log(key);
-  
+
   fs.writeFileSync("./api_keys.json", JSON.stringify(keys).replace(/},/g, "},\n"));
 });
