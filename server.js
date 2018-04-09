@@ -106,6 +106,14 @@ app.get("/schedule", auth(["basic"]), (req, res) => {
   }
 });
 
+app.get("/schedule/all", auth(["basic"]), (req, res) => {
+  res.json(pingry.getAllSchedules());
+});
+
+app.get("/schedule/manual/all", auth(["basic"]), (req, res) => {
+  res.json(pingry.getAllManualSchedules());
+});
+
 app.get("/schedule/types", auth(["basic"]), (req, res) => {
   res.json(pingry.typeList);
 });
@@ -157,6 +165,15 @@ app.get("/letter", auth(["basic"]), (req, res) => {
     res.json(pingry.letterTimes);
   }
 });
+
+app.get("/athletics/calendarList", auth(["basic"]), (req, res) => {
+  res.json(pingry.getAthleticCalendars());
+})
+
+app.get("/athletics/sports", auth(["basic"]), (req, res) => {
+  var sports = req.body.sports;
+  //TODO: Finish implementation
+})
 
 app.get("/announcements", auth(["basic"]), (req, res) => {
   res.json(pingry.getAnnouncements());

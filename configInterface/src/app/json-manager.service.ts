@@ -60,7 +60,6 @@ export class JsonManagerService {
       this.refreshing--;
       this.checkDoneRefreshing();
     }, err => {if(err.status == 401){this.apiKey = ""; this.saveKey();}});
-    //TODO:Change this url
     this.http.get("/schedule/types?api_key="+this.apiKey).subscribe(res => {
       this.scheduleTypes = res;
       this.refreshing--;
