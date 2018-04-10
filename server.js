@@ -171,8 +171,30 @@ app.get("/athletics/calendarList", auth(["basic"]), (req, res) => {
 })
 
 app.get("/athletics/sports", auth(["basic"]), (req, res) => {
-  var sports = req.body.sports;
-  //TODO: Finish implementation
+  let sports = req.query.sport;
+  if(typeof sports == "string"){
+    sports = new Array(sports);
+  }
+  let events = [];
+  for(let i = 0; i < sports.length; i++){
+    let teamEvents = pingry.getAthleticScheduleForTeam(sports[i]);
+    if(!!teamEvents){
+      events = events.concat(teamEvents);
+    }
+  }
+
+  events.sort((a,b) => {
+      if(a.startTime==b.startTime){
+        if(a.title == b.title) return a.desc.localeCompare(b.desc);
+        else return a.title.localeCompare(b.title);
+      }
+      else return a.startTime - b.startTime;
+  });
+  res.json(events);
+})
+
+app.get("/athletics/sports/all", auth(["basic"]), (req, res) => {
+  res.json(pingry.getAllAthleticEvents());
 })
 
 app.get("/announcements", auth(["basic"]), (req, res) => {

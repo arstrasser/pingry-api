@@ -34,6 +34,9 @@ exports.PAPI = class {
     this.menuStartDate = null;
     this.myMenu = [];
     this.manualSchedules = {};
+    this.athleticInfo = [];
+    this.athleticSchedules = {};
+    this.allAthleticEvents = [];
     this.override = {"ddd":{}, "scheduleOverride":{}, "letterOverride":{}, "eventsOverride":{CT:{}, CP:{}}};
     this.letterTimes = [
       {"letter":"A", "schedule":[1,2,3,4], "dates":[]},
@@ -99,102 +102,7 @@ exports.PAPI = class {
   }
 
   getAthleticCalendars(){
-    return [
-      ["Baseball - Boys Junior Varsity", "http://www.pingry.org/calendar/team_119.ics"],
-      //["Baseball - Boys Middle School A", "http://www.pingry.org/calendar/team_210.ics"],
-      //["Baseball - Boys Middle School B", "http://www.pingry.org/calendar/team_211.ics"],
-      //["Baseball - Boys MS", "http://www.pingry.org/calendar/team_223.ics"],
-      ["Baseball - Boys Varsity", "http://www.pingry.org/calendar/team_121.ics"],
-      ["Basketball - Boys Frosh", "http://www.pingry.org/calendar/team_222.ics"],
-      ["Basketball - Boys Junior Varsity", "http://www.pingry.org/calendar/team_123.ics"],
-      //["Basketball - Boys Middle School A", "http://www.pingry.org/calendar/team_124.ics"],
-      //["Basketball - Boys Middle School B", "http://www.pingry.org/calendar/team_207.ics"],
-      //["Basketball - Boys Middle School C", "http://www.pingry.org/calendar/team_230.ics"],
-      ["Basketball - Boys Varsity", "http://www.pingry.org/calendar/team_125.ics"],
-      ["Basketball - Girls Junior Varsity", "http://www.pingry.org/calendar/team_126.ics"],
-      //["Basketball - Girls Middle School A", "http://www.pingry.org/calendar/team_205.ics"],
-      //["Basketball - Girls Middle School B", "http://www.pingry.org/calendar/team_206.ics"],
-      ["Basketball - Girls Varsity", "http://www.pingry.org/calendar/team_127.ics"],
-      ["Cross Country -  Frosh", "http://www.pingry.org/calendar/team_251.ics"],
-      ["Cross Country - Boys Junior Varsity", "http://www.pingry.org/calendar/team_249.ics"],
-      ["Cross Country - Boys Varsity", "http://www.pingry.org/calendar/team_97.ics"],
-      //["Cross Country - Coed MS", "http://www.pingry.org/calendar/team_99.ics"],
-      ["Cross Country - Girls Junior Varsity", "http://www.pingry.org/calendar/team_250.ics"],
-      ["Cross Country - Girls Varsity", "http://www.pingry.org/calendar/team_100.ics"],
-      ["Fencing - Boys Varsity", "http://www.pingry.org/calendar/team_129.ics"],
-      //["Fencing - Coed MS", "http://www.pingry.org/calendar/team_130.ics"],
-      ["Fencing - Girls Varsity", "http://www.pingry.org/calendar/team_132.ics"],
-      ["Field Hockey - Girls Junior Varsity", "http://www.pingry.org/calendar/team_37.ics"],
-      //["Field Hockey - Girls MS", "http://www.pingry.org/calendar/team_38.ics"],
-      ["Field Hockey - Girls Varsity", "http://www.pingry.org/calendar/team_39.ics"],
-      ["Football - Boys Junior Varsity", "http://www.pingry.org/calendar/team_34.ics"],
-      //["Football - Boys MS", "http://www.pingry.org/calendar/team_35.ics"],
-      ["Football - Boys Varsity", "http://www.pingry.org/calendar/team_36.ics"],
-      ["Golf - Boys Junior Varsity", "http://www.pingry.org/calendar/team_212.ics"],
-      ["Golf - Boys Varsity", "http://www.pingry.org/calendar/team_135.ics"],
-      ["Golf - Girls Junior Varsity", "http://www.pingry.org/calendar/team_213.ics"],
-      ["Golf - Girls Varsity", "http://www.pingry.org/calendar/team_138.ics"],
-      ["Ice Hockey - Boys Junior Varsity", "http://www.pingry.org/calendar/team_139.ics"],
-      ["Ice Hockey - Boys Varsity", "http://www.pingry.org/calendar/team_140.ics"],
-      //["Ice Hockey - Coed MS", "http://www.pingry.org/calendar/team_141.ics"],
-      ["Ice Hockey - Girls Varsity", "http://www.pingry.org/calendar/team_142.ics"],
-      ["Lacrosse - Boys Frosh", "http://www.pingry.org/calendar/team_143.ics"],
-      ["Lacrosse - Boys Junior Varsity", "http://www.pingry.org/calendar/team_144.ics"],
-      //["Lacrosse - Boys Middle School A", "http://www.pingry.org/calendar/team_214.ics"],
-      //["Lacrosse - Boys Middle School B", "http://www.pingry.org/calendar/team_215.ics"],
-      //["Lacrosse - Boys MS", "http://www.pingry.org/calendar/team_145.ics"],
-      ["Lacrosse - Boys Varsity", "http://www.pingry.org/calendar/team_146.ics"],
-      ["Lacrosse - Girls Frosh", "http://www.pingry.org/calendar/team_147.ics"],
-      ["Lacrosse - Girls Junior Varsity", "http://www.pingry.org/calendar/team_148.ics"],
-      //["Lacrosse - Girls Middle School A", "http://www.pingry.org/calendar/team_216.ics"],
-      //["Lacrosse - Girls Middle School B", "http://www.pingry.org/calendar/team_217.ics"],
-      //["Lacrosse - Girls MS", "http://www.pingry.org/calendar/team_224.ics"],
-      ["Lacrosse - Girls Varsity", "http://www.pingry.org/calendar/team_150.ics"],
-      ["Ski Team - Boys Junior Varsity", "http://www.pingry.org/calendar/team_228.ics"],
-      ["Ski Team - Boys Varsity", "http://www.pingry.org/calendar/team_201.ics"],
-      ["Ski Team - Girls Junior Varsity", "http://www.pingry.org/calendar/team_229.ics"],
-      ["Ski Team - Girls Varsity", "http://www.pingry.org/calendar/team_202.ics"],
-      ["Soccer - Boys Frosh", "http://www.pingry.org/calendar/team_59.ics"],
-      ["Soccer - Boys Junior Varsity", "http://www.pingry.org/calendar/team_6.ics"],
-      //["Soccer - Boys Middle School A", "http://www.pingry.org/calendar/team_155.ics"],
-      //["Soccer - Boys Middle School B", "http://www.pingry.org/calendar/team_203.ics"],
-      //["Soccer - Boys Middle School C", "http://www.pingry.org/calendar/team_234.ics"],
-      ["Soccer - Boys Varsity", "http://www.pingry.org/calendar/team_61.ics"],
-      ["Soccer - Girls Frosh", "http://www.pingry.org/calendar/team_248.ics"],
-      ["Soccer - Girls Junior Varsity", "http://www.pingry.org/calendar/team_63.ics"],
-      //["Soccer - Girls MS", "http://www.pingry.org/calendar/team_226.ics"],
-      ["Soccer - Girls Varsity", "http://www.pingry.org/calendar/team_5.ics"],
-      ["Softball - Girls Junior Varsity", "http://www.pingry.org/calendar/team_151.ics"],
-      //["Softball - Girls Middle School A", "http://www.pingry.org/calendar/team_218.ics"],
-      //["Softball - Girls Middle School B", "http://www.pingry.org/calendar/team_219.ics"],
-      //["Softball - Girls MS", "http://www.pingry.org/calendar/team_225.ics"],
-      ["Softball - Girls Varsity", "http://www.pingry.org/calendar/team_153.ics"],
-      ["Squash - Boys Varsity", "http://www.pingry.org/calendar/team_158.ics"],
-      ["Squash - Coed Junior Varsity", "http://www.pingry.org/calendar/team_194.ics"],
-      ["Squash - Coed Varsity", "http://www.pingry.org/calendar/team_161.ics"],
-      ["Squash - Girls Varsity", "http://www.pingry.org/calendar/team_162.ics"],
-      ["Swimming - Boys Varsity", "http://www.pingry.org/calendar/team_163.ics"],
-      //["Swimming - Coed MS", "http://www.pingry.org/calendar/team_165.ics"],
-      ["Swimming - Girls Varsity", "http://www.pingry.org/calendar/team_166.ics"],
-      ["Tennis - Boys Junior Varsity", "http://www.pingry.org/calendar/team_167.ics"],
-      //["Tennis - Boys MS", "http://www.pingry.org/calendar/team_168.ics"],
-      ["Tennis - Boys Varsity", "http://www.pingry.org/calendar/team_169.ics"],
-      ["JV-2 Girls Tennis", "http://www.pingry.org/calendar/team_235.ics"],
-      ["Tennis - Girls Junior Varsity", "http://www.pingry.org/calendar/team_77.ics"],
-      //["Tennis - Girls MS", "http://www.pingry.org/calendar/team_78.ics"],
-      ["Tennis - Girls Varsity", "http://www.pingry.org/calendar/team_79.ics"],
-      ["Track - Boys Varsity", "http://www.pingry.org/calendar/team_171.ics"],
-      //["Track - Coed MS", "http://www.pingry.org/calendar/team_173.ics"],
-      ["Track - Girls Varsity", "http://www.pingry.org/calendar/team_175.ics"],
-      ["Water Polo - Coed Junior Varsity", "http://www.pingry.org/calendar/team_89.ics"],
-      //["Water Polo - Coed MS", "http://www.pingry.org/calendar/team_220.ics"],
-      ["Water Polo - Coed Varsity", "http://www.pingry.org/calendar/team_221.ics"],
-      ["Winter Track - Boys Varsity", "http://www.pingry.org/calendar/team_208.ics"],
-      ["Winter Track - Girls Varsity", "http://www.pingry.org/calendar/team_209.ics"],
-      ["Wrestling - Boys Junior Varsity", "http://www.pingry.org/calendar/team_179.ics"],
-      //["Wrestling - Boys MS", "http://www.pingry.org/calendar/team_180.ics"],
-      ["Wrestling - Boys Varsity", "http://www.pingry.org/calendar/team_181.ics"]
-    ];
+    return ;
   }
 
   getAllSchedules(){
@@ -235,6 +143,18 @@ exports.PAPI = class {
     }
 
     return {schedule: [], name: "No Schedule"};
+  }
+
+  getAllAthleticSchedules(){
+    return this.athleticSchedules;
+  }
+
+  getAthleticScheduleForTeam(teamId){
+    return this.athleticSchedules[teamId];
+  }
+
+  getAllAthleticEvents(){
+    return this.allAthleticEvents;
   }
 
   getAnnouncements(){
@@ -306,6 +226,20 @@ exports.PAPI = class {
           }
         }
 
+        this.allAthleticEvents = [];
+        for(i in this.athleticSchedules){
+          if(this.athleticSchedules.hasOwnProperty(i)){
+            this.allAthleticEvents = this.allAthleticEvents.concat(this.athleticSchedules[i]);
+          }
+        }
+        this.allAthleticEvents.sort((a,b) => {
+            if(a.startTime==b.startTime){
+              if(a.title == b.title) return a.desc.localeCompare(b.desc);
+              else return a.title.localeCompare(b.title);
+            }
+            else return a.startTime - b.startTime;
+        });
+
         //Combine Letter Day override
         for(i in this.override.letterOverride){
           if(this.override.letterOverride.hasOwnProperty(i)){
@@ -336,11 +270,67 @@ exports.PAPI = class {
 
     this.refreshing = true;
     counter++;
-    fs.readFile(path.join(__dirname, "..", "scheduleTypes.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "ScheduleTypes.json"), (err, data) =>{
       if(err){
         console.warn(err);
       }else{
         this.typeList = JSON.parse(data);
+      }
+      counter--;
+      checkIfDone();
+    });
+
+    counter++;
+    fs.readFile(path.join(__dirname, "..", "AthleticCalendars.json"), (err, data) =>{
+      if(err){
+        console.warn(err);
+      }else{
+        this.athleticInfo = JSON.parse(data);
+        for(var i = 0; i < this.athleticInfo.length; i++){
+          ((sportId) => {
+            makeRequest(this.athleticInfo[i].url, (res) => {
+              let calEvents = feedParse.parseCalendar(res);
+              for(var j = 0; j < calEvents.length; j++){
+                delete calEvents[j].uid;
+
+                //Day type event
+                if(calEvents[j].type == "day"){
+                  //Set the start time to be the time (makes for easier sorting and display)
+                  calEvents[j].startTime = calEvents[j].time;
+                  delete calEvents[j].time;
+                }
+
+                //Convert javascript dates to numbers
+                if(!!calEvents[j].startTime){
+                  calEvents[j].startTime = calEvents[j].startTime.getTime();
+                }
+                if(!!calEvents[j].endTime){
+                  calEvents[j].endTime = calEvents[j].endTime.getTime();
+                }
+
+                //Fix titles and add descriptions
+                if(calEvents[j].desc == undefined){
+                  var title = calEvents[j].title;
+                  var desc = title.substring(title.indexOf(" - ")+3);
+                  title = title.substring(0, title.indexOf(" - "));
+                  calEvents[j].title = title;
+                  calEvents[j].desc = desc;
+                }
+              }
+
+              //Sorts the event by time, then by title, then by description
+              calEvents.sort((a,b) => {
+                  if(a.startTime==b.startTime){
+                    if(a.title == b.title) return a.desc.localeCompare(b.desc);
+                    else return a.title.localeCompare(b.title);
+                  }
+                  else return a.startTime - b.startTime;
+              });
+
+              this.athleticSchedules[sportId] = calEvents;
+            });
+          })(this.athleticInfo[i].id);
+        }
       }
       counter--;
       checkIfDone();
@@ -445,7 +435,8 @@ exports.PAPI = class {
           // For faster performance but lower accuracy, uncomment this and remove the first calendar parse.
           if(calEvents[i].title.indexOf("Collab") != -1 && calEvents[i].title.indexOf("Fac") != -1){
             facultyCollabDays.push(dateToDayString(calEvents[i].time));
-          }*/
+          }
+          */
         }
         else{
           //Unknown event type
