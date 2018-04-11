@@ -2,16 +2,16 @@
   <form class="athletic-form">
     <mat-table #table [dataSource]="dataSource">
       <ng-container matColumnDef="name">
-        <mat-header-cell *matHeaderCellDef>Sport Name</mat-header-cell>
-        <mat-cell *matCellDef="let element">
+        <mat-header-cell *matHeaderCellDef style="flex: 2">Sport Name</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 2">
           <mat-form-field>
             <input matInput [(ngModel)]="element.name" (change)="onNameChange(element)" [ngModelOptions]="{standalone: true}">
           </mat-form-field>
         </mat-cell>
       </ng-container>
       <ng-container matColumnDef="url">
-        <mat-header-cell *matHeaderCellDef>Calendar URL</mat-header-cell>
-        <mat-cell *matCellDef="let element">
+        <mat-header-cell *matHeaderCellDef style="flex: 2">Calendar URL</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 2">
           <mat-form-field>
             <input matInput type="text" [(ngModel)]="element.url" (change)="onUrlChange(element)" [ngModelOptions]="{standalone: true}">
           </mat-form-field>

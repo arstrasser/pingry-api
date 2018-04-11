@@ -172,6 +172,7 @@ app.get("/athletics/calendarList", auth(["basic"]), (req, res) => {
 
 app.get("/athletics/sports", auth(["basic"]), (req, res) => {
   let sports = req.query.sport;
+  if(!sports){return res.json([]);}
   if(typeof sports == "string"){
     sports = new Array(sports);
   }

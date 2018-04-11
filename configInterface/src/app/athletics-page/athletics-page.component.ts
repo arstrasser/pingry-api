@@ -21,8 +21,10 @@ export class AthleticsPageComponent {
 
   update(){
     this.data = this.manager.athletics;
-    let newId = this.manager.athletics[this.manager.athletics.length - 1].id + 1;
-    this.data.push({id:newId,name:"",url:"", temp:true});
+    if(!this.manager.athletics[this.manager.athletics.length - 1].hasOwnProperty("temp")){
+      let newId = this.manager.athletics[this.manager.athletics.length - 1].id + 1;
+      this.data.push({id:newId,name:"",url:"", temp:true});
+    }
     this.dataSource = new MatTableDataSource<Element>(this.data);
   }
 

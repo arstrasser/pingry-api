@@ -107,7 +107,9 @@ export class JsonManagerService {
     }
 
     console.log(JSON.stringify(this.athletics));
-    this.athletics.pop();
+    if(this.athletics[this.athletics.length - 1].hasOwnProperty("temp")){
+      this.athletics.pop();
+    }
     this.http.post("/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(
       res => afterUpdate(true), res => afterUpdate(false));
     this.http.post("/updateAthletics?api_key="+this.apiKey, {newJSON:JSON.stringify(this.athletics)}, {responseType:"text"}).subscribe(
