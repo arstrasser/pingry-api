@@ -168,7 +168,7 @@ app.get("/letter", auth(["basic"]), (req, res) => {
 
 app.get("/athletics/calendarList", auth(["basic"]), (req, res) => {
   res.json(pingry.getAthleticCalendars());
-})
+});
 
 app.get("/athletics/sports", auth(["basic"]), (req, res) => {
   let sports = req.query.sport;
@@ -191,7 +191,7 @@ app.get("/athletics/sports", auth(["basic"]), (req, res) => {
       else return a.startTime - b.startTime;
   });
   res.json(events);
-})
+});
 
 app.get("/athletics/sports/all", auth(["basic"]), (req, res) => {
   res.json(pingry.getAllAthleticEvents());
@@ -230,11 +230,32 @@ app.post("/updateOverride", auth(["admin"]), (req, res) => {
         console.error(err);
         return res.status(500).send("Error saving to file");
       }
-      pingry.refresh(() => {
-        return res.status(200).send("Success");
-      });
+      return res.status(200).send("Success");
     })
   }catch(e){ return res.status(400).send("Error parsing JSON")}
+})
+
+app.post("/updateAthletics", auth(["admin"]), (req, res) => {
+  try {
+    var newAthletics = JSON.parse(req.body.newJSON);
+    fs.writeFile("AthleticCalendars.json", req.body.newJSON, (err) => {
+      if(err){
+        console.error("Error updating remote override file:");
+        console.error(err);
+        return res.status(500).send("Error saving to file");
+      }
+      return res.status(200).send("Success");
+    });
+  }catch(e){
+    console.error(e);
+    return res.status(400).send("Error parsing JSON");
+  }
+})
+
+app.get("/forceRefresh", auth(["admin"]), (req, res) => {
+  pingry.refresh(() => {
+    return res.status(200).send("Success");
+  });
 })
 
 //Refresh from the API, then load the server

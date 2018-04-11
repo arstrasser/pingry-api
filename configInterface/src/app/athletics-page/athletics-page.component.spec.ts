@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { OutputPageComponent } from './output-page.component';
+import { AthleticsPageComponent } from './athletics-page.component';
 
 describe('OutputPageComponent', () => {
-  let component: OutputPageComponent;
-  let fixture: ComponentFixture<OutputPageComponent>;
+  let component: AthleticsPageComponent;
+  let fixture: ComponentFixture<AthleticsPageComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ OutputPageComponent ]
+      declarations: [ AthleticsPageComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(OutputPageComponent);
+    fixture = TestBed.createComponent(AthleticsPageComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

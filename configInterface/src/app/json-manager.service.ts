@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 export class JsonManagerService {
   json:any = {};
   scheduleTypes:any = [];
+  athletics:any = [];
   changed:boolean = false;
   apiKey:string = "";
 
@@ -54,7 +55,7 @@ export class JsonManagerService {
   }
 
   refresh(){
-    this.refreshing = 2;
+    this.refreshing = 3;
     this.http.get("/override?api_key="+this.apiKey).subscribe(res => {
       this.json = res;
       this.refreshing--;
@@ -65,6 +66,11 @@ export class JsonManagerService {
       this.refreshing--;
       this.checkDoneRefreshing();
     }, err => {if(err.status == 401){this.apiKey = ""; this.saveKey();}});
+    this.http.get("/athletics/calendarList?api_key="+this.apiKey).subscribe(res => {
+      this.athletics = res;
+      this.refreshing--;
+      this.checkDoneRefreshing();
+    });
     this.changed = false;
   }
 
@@ -87,10 +93,24 @@ export class JsonManagerService {
   }
 
   saveJson(callback){
-    this.http.post("/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(res => {
-      callback(true);
-    }, res => {
-      callback(false);
-    });
+    let saving = 2;
+    let afterUpdate = (res) => {
+      if(res){
+        saving--;
+      }
+      if(saving == 0){
+        this.http.get("/forceRefresh?api_key="+this.apiKey, {responseType:"text"}).subscribe(res => {
+          callback(res);
+          this.refresh();
+        })
+      }
+    }
+
+    console.log(JSON.stringify(this.athletics));
+    this.athletics.pop();
+    this.http.post("/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(
+      res => afterUpdate(true), res => afterUpdate(false));
+    this.http.post("/updateAthletics?api_key="+this.apiKey, {newJSON:JSON.stringify(this.athletics)}, {responseType:"text"}).subscribe(
+      res => afterUpdate(true), res => afterUpdate(false));
   }
 }

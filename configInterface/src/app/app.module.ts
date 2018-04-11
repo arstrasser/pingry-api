@@ -22,7 +22,7 @@ import {
 import {FormsModule} from '@angular/forms';
 
 import { AppComponent } from './app.component';
-import { OutputPageComponent } from './output-page/output-page.component';
+import { AthleticsPageComponent } from './athletics-page/athletics-page.component';
 import { DddPageComponent } from './ddd-page/ddd-page.component';
 import { SchedulePageComponent } from './schedule-page/schedule-page.component';
 import { LetterPageComponent } from './letter-page/letter-page.component';
@@ -41,13 +41,13 @@ const appRoutes:Routes = [
   {path: 'letter', component: LetterPageComponent},
   {path: 'events', component: EventPageComponent},
   {path: 'ddd', component: DddPageComponent},
-  {path: 'output', component: OutputPageComponent}
+  {path: 'athletics', component: AthleticsPageComponent}
 ]
 
 @NgModule({
   declarations: [
     AppComponent,
-    OutputPageComponent,
+    AthleticsPageComponent,
     DddPageComponent,
     SchedulePageComponent,
     LetterPageComponent,

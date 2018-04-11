@@ -102,7 +102,7 @@ exports.PAPI = class {
   }
 
   getAthleticCalendars(){
-    return ;
+    return this.athleticInfo;
   }
 
   getAllSchedules(){

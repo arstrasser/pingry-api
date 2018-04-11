@@ -21,7 +21,8 @@ export class AppComponent {
     {title:"Schedule", url:"/schedule"},
     {title:"Letter Day", url:"/letter"},
     {title:"Events", url:"/events"},
-    {title:"Dress Down Days", url:"/ddd"}
+    {title:"Dress Down Days", url:"/ddd"},
+    {title:"Athletic Cals", url:"/athletics"}
   ];
 
   changed:boolean = false;
