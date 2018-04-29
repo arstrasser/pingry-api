@@ -219,9 +219,11 @@ exports.PAPI = class {
         //Combine schedule override
         for(i in this.override.scheduleOverride){
           if(this.override.scheduleOverride.hasOwnProperty(i)){
-            this.scheduledDays[i] = this.override.scheduleOverride[i].type;
             if(this.override.scheduleOverride[i].type == "manual"){
+              this.scheduledDays[i] = "manual";
               this.manualSchedules[i] = this.override.scheduleOverride[i].classes;
+            }else{
+              this.scheduledDays[i] = this.override.scheduleOverride[i].type;
             }
           }
         }

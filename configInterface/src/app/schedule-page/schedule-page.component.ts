@@ -82,6 +82,10 @@ export class SchedulePageComponent {
           this.manager.json.scheduleOverride[elem.date] = {type:elem.type, name:elem.name};
           this.update();
           this.manager.change();
+          return true;
+        }else{
+          this.snackBar.open("Please add a name", "Close", {panelClass:"snackbar-error", duration:3000});
+          return false;
         }
       }else if(elem.type == "manual"){
         try{
@@ -89,14 +93,19 @@ export class SchedulePageComponent {
           this.manager.json.scheduleOverride[elem.date] = {type:elem.type, classes}
           this.update();
           this.manager.change();
+          return true;
         }catch(e){
           console.log("JSON parsing error: ", e);
           this.snackBar.open("Invalid custom schedule JSON", "Close", {panelClass:"snackbar-error", duration:3000});
+          return false;
         }
       }else{
         this.snackBar.open("Invalid type", "Close", {panelClass:"snackbar-error", duration:3000});
+        return false;
       }
     }
+    this.snackBar.open("Error adding", "Close", {panelClass:"snackbar-error", duration:3000});
+    return false;
   }
 
   removeItem(item){

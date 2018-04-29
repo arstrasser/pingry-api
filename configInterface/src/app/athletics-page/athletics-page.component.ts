@@ -34,13 +34,15 @@ export class AthleticsPageComponent {
   }
 
   onNameChange(elem){
-    if(elem.temp) return;
+    if(elem.temp) return false;
     this.manager.change();
+    return true;
   }
 
   onUrlChange(elem){
-    if(elem.temp) return;
+    if(elem.temp) return false;
     this.manager.change();
+    return true;
   }
 
   removeItem(item){
@@ -49,9 +51,10 @@ export class AthleticsPageComponent {
         this.manager.athletics.splice(i, 1);
         this.manager.change();
         this.update();
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   addItem(item){
@@ -59,8 +62,10 @@ export class AthleticsPageComponent {
       delete item.temp;
       this.manager.change();
       this.update();
+      return true;
     }else{
       this.snackBar.open("Invalid options", "Close", {panelClass:"snackbar-error", duration:3000});
+      return false;
     }
   }
 

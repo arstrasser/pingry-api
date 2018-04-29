@@ -44,11 +44,14 @@ export class EventPageComponent {
     var str = this.manager.dateToDayString(event.value);
     if(elem.temp){
       elem.date = str;
+      return true;
     }else{
       if((isCT && this.manager.json.eventsOverride.CT.hasOwnProperty(str)) || (!isCT && this.manager.json.eventsOverride.CP.hasOwnProperty(str))){
         this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
+        return false;
       }else if(elem.event == ""){
         this.snackBar.open("Please add an event name", "Close", {panelClass:"snackbar-error", duration:3000});
+        return false;
       }else{
         if(isCT){
           delete this.manager.json.eventsOverride.CT[elem.date];
@@ -59,6 +62,7 @@ export class EventPageComponent {
         }
         this.manager.change();
         this.update();
+        return true;
       }
     }
   }

@@ -44,14 +44,17 @@ export class LetterPageComponent {
     var str = this.manager.dateToDayString(event.value);
     if(elem.temp){
       elem.date = str;
+      return true;
     }else{
       if(this.manager.json.letterOverride.hasOwnProperty(str)){
         this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
+        return false;
       }else{
         delete this.manager.json.letterOverride[elem.date];
         this.manager.json.letterOverride[str] = elem.letter;
         this.manager.change();
         this.update();
+        return true;
       }
     }
   }
