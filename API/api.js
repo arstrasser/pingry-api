@@ -223,7 +223,7 @@ exports.PAPI = class {
               this.scheduledDays[i] = "manual";
               this.manualSchedules[i] = this.override.scheduleOverride[i].classes;
             }else{
-              this.scheduledDays[i] = this.override.scheduleOverride[i].type;
+              this.scheduledDays[i] = this.override.scheduleOverride[i].name;
             }
           }
         }
