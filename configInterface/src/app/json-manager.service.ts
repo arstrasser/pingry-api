@@ -56,17 +56,17 @@ export class JsonManagerService {
 
   refresh(){
     this.refreshing = 3;
-    this.http.get("/override?api_key="+this.apiKey).subscribe(res => {
+    this.http.get("/v1/override?api_key="+this.apiKey).subscribe(res => {
       this.json = res;
       this.refreshing--;
       this.checkDoneRefreshing();
     }, err => {if(err.status == 401){this.apiKey = ""; this.saveKey();}});
-    this.http.get("/schedule/types?api_key="+this.apiKey).subscribe(res => {
+    this.http.get("/v1/schedule/types?api_key="+this.apiKey).subscribe(res => {
       this.scheduleTypes = res;
       this.refreshing--;
       this.checkDoneRefreshing();
     }, err => {if(err.status == 401){this.apiKey = ""; this.saveKey();}});
-    this.http.get("/athletics/calendarList?api_key="+this.apiKey).subscribe(res => {
+    this.http.get("/v1/athletics/calendarList?api_key="+this.apiKey).subscribe(res => {
       this.athletics = res;
       this.refreshing--;
       this.checkDoneRefreshing();
@@ -99,7 +99,7 @@ export class JsonManagerService {
         saving--;
       }
       if(saving == 0){
-        this.http.get("/forceRefresh?api_key="+this.apiKey, {responseType:"text"}).subscribe(res => {
+        this.http.get("/v1/forceRefresh?api_key="+this.apiKey, {responseType:"text"}).subscribe(res => {
           callback(res);
           this.refresh();
         })
@@ -110,9 +110,9 @@ export class JsonManagerService {
     if(this.athletics[this.athletics.length - 1].hasOwnProperty("temp")){
       this.athletics.pop();
     }
-    this.http.post("/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(
+    this.http.post("/v1/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(
       res => afterUpdate(true), res => afterUpdate(false));
-    this.http.post("/updateAthletics?api_key="+this.apiKey, {newJSON:JSON.stringify(this.athletics)}, {responseType:"text"}).subscribe(
+    this.http.post("/v1/updateAthletics?api_key="+this.apiKey, {newJSON:JSON.stringify(this.athletics)}, {responseType:"text"}).subscribe(
       res => afterUpdate(true), res => afterUpdate(false));
   }
 }
