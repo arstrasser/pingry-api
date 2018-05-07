@@ -1,7 +1,7 @@
 /**
- * @file Javascript class file for the Pingry API
+ * @file Javascript class file for the Pingry API v1
  * @author Alex Strasser
- * @version 2018.04.07
+ * @version 2018.05.06
  */
 
 //Configuration Constants:
@@ -22,7 +22,7 @@ const feedParse = require('./feedParse');
 const dfp = require('./dateFunctions');
 const path = require('path');
 
-exports.PAPI = class {
+exports.PAPI1 = class {
   constructor(){
     //Global Variables:
     this.refreshing = false;
@@ -272,7 +272,7 @@ exports.PAPI = class {
 
     this.refreshing = true;
     counter++;
-    fs.readFile(path.join(__dirname, "..", "ScheduleTypes.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "JSON_config", "ScheduleTypes.json"), (err, data) =>{
       if(err){
         console.warn(err);
       }else{
@@ -283,7 +283,7 @@ exports.PAPI = class {
     });
 
     counter++;
-    fs.readFile(path.join(__dirname, "..", "AthleticCalendars.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "JSON_config", "AthleticCalendars.json"), (err, data) =>{
       if(err){
         console.warn(err);
       }else{
@@ -467,7 +467,7 @@ exports.PAPI = class {
     });
 
     counter++;
-    fs.readFile(path.join(__dirname, "..", "RemoteConfig.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "JSON_config", "RemoteConfig.json"), (err, data) =>{
       this.override = JSON.parse(data);
       counter--;
       checkIfDone();
