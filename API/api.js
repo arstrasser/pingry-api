@@ -1,7 +1,7 @@
 /**
  * @file Javascript class file for the Pingry API v1
  * @author Alex Strasser
- * @version 2018.05.06
+ * @version 2018.06.20
  */
 
 //Configuration Constants:
@@ -521,8 +521,8 @@ exports.PAPI1 = class {
 
                 //For each station of each meal
                 for(let x = 0; x < menuItems[i][j][k].length; x++){
+                  this.myMenu[i][j].push([]);
                   if(opStations[k][x]){
-                    this.myMenu[i][j].push([]);
 
                     //For each meal of each station
                     for(let y = 0; y < menuItems[i][j][k][x].length; y++){
