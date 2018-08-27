@@ -14,6 +14,13 @@ let pingry = new (require("./API/api").PAPI1)();
 
 let auth = new (require("./auth").auth1)();
 
+router.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+
 //API routes
 router.get("/schedule", auth.mw(["basic"]), (req, res) => {
   if(req.query.date){
