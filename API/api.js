@@ -338,19 +338,8 @@ exports.PAPI1 = class {
       checkIfDone();
     });
 
-    this.scheduledDays = {};
-    makeRequest(collabDatesURL, (res) => {
-      let calEvents = feedParse.parseCalendar(res);
-      for(let i=0; i<calEvents.length; i++){
-        //If the event title contains the text Faculty Collaboration Day
-        if(calEvents[i].title.indexOf("Faculty Collaboration Day") != -1){
-          //Add the date string to a temporary array
-          this.scheduledDays[dfp.dateToDayString(calEvents[i].time)] = "Faculty Collaboration";
-        }
-      }
-    });
-
     makeRequest(specialScheduleURL, (res) => {
+      this.scheduledDays = {};
       let calEvents = feedParse.parseCalendar(res);
       let CT = {};
       let CP = {};
@@ -448,9 +437,31 @@ exports.PAPI1 = class {
       }
       this.scheduledEvents = {CT, CP};
       this.scheduledDays = specialSchedule;
+
+      //Make this request later to make sure nothing overlaps
+      makeRequest(collabDatesURL, (res) => {
+        let calEvents = feedParse.parseCalendar(res);
+        for(let i=0; i<calEvents.length; i++){
+          //If the event title contains the text Faculty Collaboration Day
+          if(calEvents[i].title.indexOf("Faculty Collaboration Day") != -1){
+            //Add the date string to a temporary array
+            this.scheduledDays[dfp.dateToDayString(calEvents[i].time)] = "Faculty Collaboration";
+          }
+        }
+      });
     });
 
     makeRequest(letterDayURL, (res) => {
+      this.letterTimes = [
+        {"letter":"A", "schedule":[1,2,3,4], "dates":[]},
+        {"letter":"B", "schedule":[5,6,7,1], "dates":[]},
+        {"letter":"C", "schedule":[2,3,4,5], "dates":[]},
+        {"letter":"D", "schedule":[6,7,1,2], "dates":[]},
+        {"letter":"E", "schedule":[3,4,5,6], "dates":[]},
+        {"letter":"F", "schedule":[7,1,2,3], "dates":[]},
+        {"letter":"G", "schedule":[4,5,6,7], "dates":[]},
+        {"letter":"R", "schedule":[1,2,3,4,5,6,7], "dates":[]}
+      ];
       let calEvents = feedParse.parseCalendar(res);
       //Iterate through calendar events
       for(let i = 0; i < calEvents.length; i++){
