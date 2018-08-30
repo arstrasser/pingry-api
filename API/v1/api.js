@@ -297,6 +297,7 @@ exports.PAPI1 = class {
       });
     }
     let checkIfDone = () => {
+      console.log(counter);
       if(counter == 0){
         var i;
 
@@ -384,9 +385,10 @@ exports.PAPI1 = class {
           }
         }
       }
+      counter--;
+      checkIfDone();
     });
 
-    counter++;
     makeRequest(veracrossAthleticsURL, (res) => {
       let events = JSON.parse(res);
       for(var i = 0; i < events.length; i++){ //For each event
@@ -400,9 +402,9 @@ exports.PAPI1 = class {
           }
         }
       }
-      counter--;
-      checkIfDone();
     });
+
+    counter++;
     db.collection("athleticteams").find((err, data) => {
       if(err){
         console.warn(err);
@@ -411,7 +413,6 @@ exports.PAPI1 = class {
         for(var i = 0; i < this.athleticInfo.length; i++){
           if(!this.athleticInfo[i].veracross_id){
             ((sportId) => {
-              counter++;
               makeRequest(this.athleticInfo[i].url, (res) => {
                 let calEvents = feedParse.parseCalendar(res);
                 for(var j = 0; j < calEvents.length; j++){
@@ -452,8 +453,6 @@ exports.PAPI1 = class {
                 });
 
                 this.athleticSchedules[sportId] = calEvents;
-                counter--;
-                checkIfDone();
               });
             })(this.athleticInfo[i].id);
           }
@@ -672,6 +671,7 @@ exports.PAPI1 = class {
         }
       }
     });
-    counter--; //Take the extra one off the counter to make sure it started all the requests
+
+    counter--; //Take the extra one off the counter from the beginning to make sure it started all the requests
   }
 };
