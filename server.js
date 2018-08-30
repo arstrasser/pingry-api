@@ -21,7 +21,6 @@ const http = require('http');
 const https = require('https');
 const bodyParser = require('body-parser');
 const v1 = require('./API/v1/v1');
-//const v2 = require('./API/v2/v2');
 
 //App setup
 let app = new express();
@@ -29,12 +28,11 @@ let auth = new (require("./auth").auth1)();
 
 app.use(bodyParser.json());
 
-let limiter = rateLimit({
+app.use(helmet());
+app.use(rateLimit({
   windowMs: RATE_LIMIT_WINDOW*60*1000, // 15 minutes
   max: 100
-});
-app.use(helmet());
-app.use(limiter);
+}););
 
 app.get("/testPermission", (req, res, next) => {
   return auth.mw([req.query.permission])(req, res, next);
@@ -54,7 +52,7 @@ app.use('/v1', v1.router);
 
 var httpServer = new express();
 httpServer.use(function(req, res) {
-  res.redirect("https://localhost:3001"+req.url);
+  res.redirect("https://compsci.pingry.k12.nj.us:3001"+req.url);
 })
 httpServer.listen(PORT_HTTP);
 
