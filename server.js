@@ -32,7 +32,7 @@ app.use(helmet());
 app.use(rateLimit({
   windowMs: RATE_LIMIT_WINDOW*60*1000, // 15 minutes
   max: 100
-}););
+}));
 
 app.get("/testPermission", (req, res, next) => {
   return auth.mw([req.query.permission])(req, res, next);
