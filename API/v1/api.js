@@ -5,14 +5,15 @@
  */
 
 //Configuration Constants:
-const collabDatesURL =     "https://www.pingry.org/calendar/calendar_388.ics";
-const specialScheduleURL = "https://calendar.google.com/calendar/ical/pingry.org_kg3ab8ps5pa70oj41igegj9kjo%40group.calendar.google.com/public/basic.ics";
-const letterDayURL =       "https://www.pingry.org/calendar/calendar_384.ics";
+const collabDatesURL =      "https://www.pingry.org/calendar/calendar_388.ics";
+const specialScheduleURL =  "https://calendar.google.com/calendar/ical/pingry.org_kg3ab8ps5pa70oj41igegj9kjo%40group.calendar.google.com/public/basic.ics";
+const letterDayURL =        "https://www.pingry.org/calendar/calendar_384.ics";
 //const remoteOverrideURL =  "http://mirror.pingry.k12.nj.us/software/RemoteConfig.json?d="; REMOTE OVERRIDE NOW STORED LOCALLY
-const announcementsURL =   "https://www.pingry.org/rss.cfm?news=16&d=";
-const newsURL1 =           "https://www.pingry.org/rss.cfm?news=13&d=";
-const newsURL2 =           "https://www.pingry.org/rss.cfm?news=14&d=";
-const lunchURL =           "http://www.sagedining.com/intranet/apps/mb/pubasynchhandler.php?unitId=S0091&mbMenuCardinality=0&_=";
+const veracrossAthleticsURL="http://integrate.pingry.k12.nj.us/PingryToday/athletics.json";
+const announcementsURL =    "https://www.pingry.org/rss.cfm?news=16&d=";
+const newsURL1 =            "https://www.pingry.org/rss.cfm?news=13&d=";
+const newsURL2 =            "https://www.pingry.org/rss.cfm?news=14&d=";
+const lunchURL =            "http://www.sagedining.com/intranet/apps/mb/pubasynchhandler.php?unitId=S0091&mbMenuCardinality=0&_=";
 
 
 //Imports:
@@ -21,6 +22,9 @@ const request = require('request');
 const feedParse = require('./feedParse');
 const dfp = require('./dateFunctions');
 const path = require('path');
+const mongojs = require('mongojs');
+
+let db = mongojs('PingryAPI');
 
 exports.PAPI1 = class {
   constructor(){
@@ -37,6 +41,7 @@ exports.PAPI1 = class {
     this.athleticInfo = [];
     this.athleticSchedules = {};
     this.allAthleticEvents = [];
+    this.gradePointTotals = [0, 0, 0, 0];
     this.override = {"ddd":{}, "scheduleOverride":{}, "letterOverride":{}, "eventsOverride":{CT:{}, CP:{}}};
     this.letterTimes = [
       {"letter":"A", "schedule":[1,2,3,4], "dates":[]},
@@ -52,24 +57,24 @@ exports.PAPI1 = class {
 
   letterToNumber(letter){
     switch(letter){
-      case "A":
-        return 0;
-      case "B":
-        return 1;
-      case "C":
-        return 2;
-      case "D":
-        return 3;
-      case "E":
-        return 4;
-      case "F":
-        return 5;
-      case "G":
-        return 6;
-      case "R":
-        return 7;
-      default:
-        return -1;
+    case "A":
+      return 0;
+    case "B":
+      return 1;
+    case "C":
+      return 2;
+    case "D":
+      return 3;
+    case "E":
+      return 4;
+    case "F":
+      return 5;
+    case "G":
+      return 6;
+    case "R":
+      return 7;
+    default:
+      return -1;
     }
   }
 
@@ -111,6 +116,72 @@ exports.PAPI1 = class {
 
   getAllManualSchedules(){
     return this.manualSchedules;
+  }
+
+  getScheduleTypes(){
+    return this.typeList;
+  }
+
+  updateScheduleTypes(newTypes){
+    this.typeList = newTypes;
+    return new Promise((resolve, reject) => {
+      db.collection("scheduletypes").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("scheduletypes").insert(newTypes, (err) =>{
+          if(err){
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
+  }
+
+  getPrideLeaderboard(){
+    return [
+      {name:"Form III", total:this.gradePointTotals[0]},
+      {name:"Form IV", total:this.gradePointTotals[1]},
+      {name:"Form V", total:this.gradePointTotals[2]},
+      {name:"Form VI", total:this.gradePointTotals[3]}
+    ];
+  }
+
+  getPrideEvent(id){
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").findOne({id}, (err, data) => {
+        if(err){
+          reject(err);
+        }else{
+          resolve(data);
+        }
+      });
+    });
+  }
+
+  getPrideEventFromCode(code) {
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").findOne({code}, (err, doc) => {
+        if(err){
+          reject(err);
+        }else{
+          resolve(doc);
+        }
+      });
+    });
+  }
+
+  getAllPrideEvents(){
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").find((err, data) => {
+        if(err){
+          reject(err);
+        }else{
+          resolve(data);
+        }
+      });
+    });
   }
 
   getScheduleForDate(d){
@@ -191,8 +262,22 @@ exports.PAPI1 = class {
     return this.myMenu[weekNumber][dayNumber];
   }
 
+  addGradePoints(year, numPoints){
+    let d = new Date();
+    let freshmanClassYear;
+    if(d.getMonth() >= 7 ) freshmanClassYear = d.getFullYear() + 4; //Resets at the beginning of august
+    else freshmanClassYear = d.getFullYear() + 3;
+    let index = year - freshmanClassYear;
+    if(index >= 0 && index < 4){
+      this.gradePointTotals[index] += numPoints;
+      return true;
+    }else{
+      return false;
+    }
+  }
+
   refresh(callback){
-    var counter = 0;
+    var counter = 1; //Initialize counter to 1 to make sure that all the requests necessary are made before checking if done.
     function makeRequest(url, callback2){
       counter++;
       request({url, headers:{
@@ -235,11 +320,11 @@ exports.PAPI1 = class {
           }
         }
         this.allAthleticEvents.sort((a,b) => {
-            if(a.startTime==b.startTime){
-              if(a.title == b.title) return a.desc.localeCompare(b.desc);
-              else return a.title.localeCompare(b.title);
-            }
-            else return a.startTime - b.startTime;
+          if(a.startTime==b.startTime){
+            if(a.title == b.title) return a.desc.localeCompare(b.desc);
+            else return a.title.localeCompare(b.title);
+          }
+          else return a.startTime - b.startTime;
         });
 
         //Combine Letter Day override
@@ -272,66 +357,106 @@ exports.PAPI1 = class {
 
     this.refreshing = true;
     counter++;
-    fs.readFile(path.join(__dirname, "..", "JSON_config", "ScheduleTypes.json"), (err, data) =>{
+    db.collection("scheduletypes").find((err, data) => {
       if(err){
         console.warn(err);
       }else{
-        this.typeList = JSON.parse(data);
+        this.typeList = data;
       }
       counter--;
       checkIfDone();
     });
 
     counter++;
-    fs.readFile(path.join(__dirname, "..", "JSON_config", "AthleticCalendars.json"), (err, data) =>{
+    this.gradePointTotals = [0, 0, 0, 0];
+    db.collection("users").find((err, data) => {
+      let d = new Date();
+      let freshmanClassYear;
+      if(d.getMonth() >= 7 ) freshmanClassYear = d.getFullYear() + 4; //Resets at the beginning of august
+      else freshmanClassYear = d.getFullYear() + 3;
       if(err){
         console.warn(err);
       }else{
-        this.athleticInfo = JSON.parse(data);
-        for(var i = 0; i < this.athleticInfo.length; i++){
-          ((sportId) => {
-            makeRequest(this.athleticInfo[i].url, (res) => {
-              let calEvents = feedParse.parseCalendar(res);
-              for(var j = 0; j < calEvents.length; j++){
-                delete calEvents[j].uid;
+        for(var i = 0; i < data.length; i++){
+          let index = data[i].year - freshmanClassYear;
+          if(index >= 0 && index < 4){
+            this.gradePointTotals[index] += data[i].pridePoints;
+          }
+        }
+      }
+    });
 
-                //Day type event
-                if(calEvents[j].type == "day"){
-                  //Set the start time to be the time (makes for easier sorting and display)
-                  calEvents[j].startTime = calEvents[j].time;
-                  delete calEvents[j].time;
-                }
-
-                //Convert javascript dates to numbers
-                if(!!calEvents[j].startTime){
-                  calEvents[j].startTime = calEvents[j].startTime.getTime();
-                }
-                if(!!calEvents[j].endTime){
-                  calEvents[j].endTime = calEvents[j].endTime.getTime();
-                }
-
-                //Fix titles and add descriptions
-                if(calEvents[j].desc == undefined){
-                  var title = calEvents[j].title;
-                  var desc = title.substring(title.indexOf(" - ")+3);
-                  title = title.substring(0, title.indexOf(" - "));
-                  calEvents[j].title = title;
-                  calEvents[j].desc = desc;
-                }
+    counter++;
+    makeRequest(veracrossAthleticsURL, (res) => {
+      let events = JSON.parse(res);
+      for(var i = 0; i < events.length; i++){ //For each event
+        if(events.groups){
+          for(var j = 0; j < events.groups.length; j++){ //For each team the event is assigned to
+            for(var k = 0; k < this.athleticInfo.length; k++){ //Search for the team in athleticInfo
+              if(this.athleticInfo[k].veracross_id == events.groups[j].group_pk){ //See if the primary key matches
+                this.athleticSchedules[this.athleticInfo[k].id].push(events[i]); //If it does, add the event to the schedule for that team.
               }
+            }
+          }
+        }
+      }
+      counter--;
+      checkIfDone();
+    });
+    db.collection("athleticteams").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.athleticInfo = data;
+        for(var i = 0; i < this.athleticInfo.length; i++){
+          if(!this.athleticInfo[i].veracross_id){
+            ((sportId) => {
+              counter++;
+              makeRequest(this.athleticInfo[i].url, (res) => {
+                let calEvents = feedParse.parseCalendar(res);
+                for(var j = 0; j < calEvents.length; j++){
+                  delete calEvents[j].uid;
 
-              //Sorts the event by time, then by title, then by description
-              calEvents.sort((a,b) => {
+                  //Day type event
+                  if(calEvents[j].type == "day"){
+                    //Set the start time to be the time (makes for easier sorting and display)
+                    calEvents[j].startTime = calEvents[j].time;
+                    delete calEvents[j].time;
+                  }
+
+                  //Convert javascript dates to numbers
+                  if(calEvents[j].hasOwnProperty("startTime")){
+                    calEvents[j].startTime = calEvents[j].startTime.getTime();
+                  }
+                  if(calEvents[j].hasOwnProperty("endTime")){
+                    calEvents[j].endTime = calEvents[j].endTime.getTime();
+                  }
+
+                  //Fix titles and add descriptions
+                  if(calEvents[j].desc == undefined){
+                    var title = calEvents[j].title;
+                    var desc = title.substring(title.indexOf(" - ")+3);
+                    title = title.substring(0, title.indexOf(" - "));
+                    calEvents[j].title = title;
+                    calEvents[j].desc = desc;
+                  }
+                }
+
+                //Sorts the event by time, then by title, then by description
+                calEvents.sort((a,b) => {
                   if(a.startTime==b.startTime){
                     if(a.title == b.title) return a.desc.localeCompare(b.desc);
                     else return a.title.localeCompare(b.title);
                   }
                   else return a.startTime - b.startTime;
-              });
+                });
 
-              this.athleticSchedules[sportId] = calEvents;
-            });
-          })(this.athleticInfo[i].id);
+                this.athleticSchedules[sportId] = calEvents;
+                counter--;
+                checkIfDone();
+              });
+            })(this.athleticInfo[i].id);
+          }
         }
       }
       counter--;
@@ -370,7 +495,7 @@ exports.PAPI1 = class {
           }
           //CP
           else if(
-              ((calEvents[i].startTime.getHours() == 14 && calEvents[i].startTime.getMinutes() == 45) || //Starts at 2:45
+            ((calEvents[i].startTime.getHours() == 14 && calEvents[i].startTime.getMinutes() == 45) || //Starts at 2:45
               (calEvents[i].startTime.getHours() == 14 && calEvents[i].startTime.getMinutes() == 40) ||  //  or      2:40
               (calEvents[i].startTime.getHours() == 14 && calEvents[i].startTime.getMinutes() == 35)) &&    //  or      2:35
 
@@ -478,7 +603,7 @@ exports.PAPI1 = class {
     });
 
     counter++;
-    fs.readFile(path.join(__dirname, "..", "JSON_config", "RemoteConfig.json"), (err, data) =>{
+    fs.readFile(path.join(__dirname, "..", "..", "JSON_config", "RemoteConfig.json"), (err, data) =>{
       this.override = JSON.parse(data);
       counter--;
       checkIfDone();
@@ -509,7 +634,7 @@ exports.PAPI1 = class {
     });
     makeRequest(lunchURL+Date.now(), res => {
       let contents = JSON.parse(res);
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      //const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const servingDays = contents.menu.config.grid.servingDays;
       const mealsServed = contents.menu.config.grid.mealsServed;
       const opStations = contents.menu.config.grid.opStations;
@@ -547,5 +672,6 @@ exports.PAPI1 = class {
         }
       }
     });
+    counter--; //Take the extra one off the counter to make sure it started all the requests
   }
 };

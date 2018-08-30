@@ -156,11 +156,11 @@ exports.parseCalendar = (data) => {
 
       //Yearly repeating has not been implemented since no events so far repeat yearly
       //If necessary, they can be implemented here
-      if(freq == "YEARLY"){
+      /*if(freq == "YEARLY"){
 
-      }
+      }*/
       //Monthly repeating events
-      else if(freq == "MONTHLY"){
+      if(freq == "MONTHLY"){
         //If it repeats by a specific day of the month (only currently implemented method of monthly repetition)
         if(recurrence.indexOf("BYDAY") != -1) {
           //Days of the month it repeats by
@@ -206,11 +206,12 @@ exports.parseCalendar = (data) => {
             for(let i=0; i<byDays.length; i++){
               curDay.setDate(1);
               //Gets the nth occurence of a weekday in a month (Credits: Aditya Gollapudi):
-                        if(byDays[i] >= curDay.getDay()){
-                          curDay.setDate(((byDays[i] - curDay.getDay())+(7*(weekNums[i]-1))) + 1);
-                        }else{
-                          curDay.setDate(((7-curDay.getDay()) + byDays[i]) + (7*(weekNums[i] - 1)) + 1);
-                        }
+              if(byDays[i] >= curDay.getDay()){
+                curDay.setDate(((byDays[i] - curDay.getDay())+(7*(weekNums[i]-1))) + 1);
+              }else{
+                curDay.setDate(((7-curDay.getDay()) + byDays[i]) + (7*(weekNums[i] - 1)) + 1);
+              }
+              //End Credits
 
               //Makes sure we are in the same month (if there isn't a 5th Wednesday for example so it goes into the next month)
               if(curDay.getMonth() == curMonth){
@@ -222,7 +223,7 @@ exports.parseCalendar = (data) => {
                     obj.time = curDay;
                   }else if(type == "time"){
                     obj.startTime = new Date(curDay.getTime());
-                    if(!!timeDiff){
+                    if(timeDiff){
                       obj.endTime = new Date(curDay.getTime() + timeDiff); //Add the time difference back on
                     }
                   }
@@ -287,7 +288,7 @@ exports.parseCalendar = (data) => {
                 obj.time = curDay;
               }else if(type == "time"){
                 obj.startTime = new Date(curDay.getTime());
-                if(!!timeDiff){
+                if(timeDiff){
                   obj.endTime = new Date(curDay.getTime() + timeDiff);
                 }
               }

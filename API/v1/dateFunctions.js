@@ -30,30 +30,30 @@ function parseStringForTime(d, str){
 
 function monthNameToInt(str) {
   switch(str){
-    case "Jan":
-      return 0;
-    case "Feb":
-      return 1;
-    case "Mar":
-      return 2;
-    case "Apr":
-      return 3;
-    case "May":
-      return 4;
-    case "Jun":
-      return 5;
-    case "Jul":
-      return 6;
-    case "Aug":
-      return 7;
-    case "Sep":
-      return 8;
-    case "Oct":
-      return 9;
-    case "Nov":
-      return 10;
-    case "Dec":
-      return 11;
+  case "Jan":
+    return 0;
+  case "Feb":
+    return 1;
+  case "Mar":
+    return 2;
+  case "Apr":
+    return 3;
+  case "May":
+    return 4;
+  case "Jun":
+    return 5;
+  case "Jul":
+    return 6;
+  case "Aug":
+    return 7;
+  case "Sep":
+    return 8;
+  case "Oct":
+    return 9;
+  case "Nov":
+    return 10;
+  case "Dec":
+    return 11;
   }
 }
 
@@ -103,21 +103,21 @@ exports.setDay = (d, day) => {
 
 exports.weekdayToNum = (str) => {
   switch(str){
-    case "SU":
-      return 0;
-    case "MO":
-      return 1;
-    case "TU":
-      return 2;
-    case "WE":
-      return 3;
-    case "TH":
-      return 4;
-    case "FR":
-      return 5;
-    case "SA":
-      return 6;
-    default:
-      return -1;
+  case "SU":
+    return 0;
+  case "MO":
+    return 1;
+  case "TU":
+    return 2;
+  case "WE":
+    return 3;
+  case "TH":
+    return 4;
+  case "FR":
+    return 5;
+  case "SA":
+    return 6;
+  default:
+    return -1;
   }
 };

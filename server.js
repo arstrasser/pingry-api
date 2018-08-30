@@ -6,7 +6,8 @@
 
 
 //Configuration
-const PORT = 3000;
+const PORT_HTTP = 3000;
+const PORT_HTTPS = 3001;
 const KEY_REFRESH_INTERVAL = 5; //Will refresh the api keys every X minutes
 const RATE_LIMIT_WINDOW = 15; //Will limit users based in X minute intervals
 
@@ -16,8 +17,11 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const fs = require("fs");
 const path = require('path');
+const http = require('http');
+const https = require('https');
 const bodyParser = require('body-parser');
-const v1 = require('./v1');
+const v1 = require('./API/v1/v1');
+//const v2 = require('./API/v2/v2');
 
 //App setup
 let app = new express();
@@ -25,13 +29,12 @@ let auth = new (require("./auth").auth1)();
 
 app.use(bodyParser.json());
 
-let limiter = new rateLimit({
+let limiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW*60*1000, // 15 minutes
-  delayAfter: 50,
-  max: 200,
-  delayMs: 1000
+  max: 100
 });
-app.use(helmet(limiter));
+app.use(helmet());
+app.use(limiter);
 
 app.get("/testPermission", (req, res, next) => {
   return auth.mw([req.query.permission])(req, res, next);
@@ -47,10 +50,20 @@ app.get("/configuration/*", (req, res) => {
 
 app.use('/v1', v1.router);
 
+//app.use('/v2', v2.router);
+
+var httpServer = new express();
+httpServer.use(function(req, res) {
+  res.redirect("https://localhost:3001"+req.url);
+})
+httpServer.listen(PORT_HTTP);
+
 v1.refresh(() => {
-  app.listen(PORT, () => {
-    console.log("Pingry API Started on port "+PORT);
-  });
+  https.createServer({
+    key:fs.readFileSync('./TLS_cert/key.pem'),
+    cert: fs.readFileSync('./TLS_cert/cert.pem'),
+    passphrase: "Exce11ence&H0n0r"
+  }, app).listen(PORT_HTTPS)
 });
 
 //Reloads the api keys file

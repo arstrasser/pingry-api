@@ -10,9 +10,10 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-let pingry = new (require("./API/api").PAPI1)();
-
-let auth = new (require("./auth").auth1)();
+const rateLimit = require('express-rate-limit');
+let pingry = new (require("./api").PAPI1)();
+let users = new (require("./user").userManager)();
+let auth = new (require("../../auth").auth1)();
 
 router.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -20,23 +21,23 @@ router.use(function(req, res, next) {
   next();
 });
 
-
 //API routes
 router.get("/schedule", auth.mw(["basic"]), (req, res) => {
   if(req.query.date){
     res.json(pingry.getScheduleForDate(req.query.date));
   }
   else if(req.query.type){
-    for(var i = 0; i < pingry.typeList.length; i++){
-      if(pingry.typeList[i].name == req.query.type){
-        res.json(pingry.typeList[i]);
+    let types = pingry.getScheduleTypes();
+    for(var i = 0; i < types.length; i++){
+      if(types[i].name == req.query.type){
+        res.json(types[i]);
         return;
       }
     }
-    res.json(pingry.typeList[0]);
+    res.json(types[0]);
   }
   else{
-    res.json(pingry.typeList[0]);
+    res.json(pingry.getScheduleTypes()[0]);
   }
 });
 
@@ -113,24 +114,24 @@ router.get("/athletics/sports", auth.mw(["basic"]), (req, res) => {
   let events = [];
   for(let i = 0; i < sports.length; i++){
     let teamEvents = pingry.getAthleticScheduleForTeam(sports[i]);
-    if(!!teamEvents){
+    if(teamEvents){
       events = events.concat(teamEvents);
     }
   }
 
   events.sort((a,b) => {
-      if(a.startTime==b.startTime){
-        if(a.title == b.title) return a.desc.localeCompare(b.desc);
-        else return a.title.localeCompare(b.title);
-      }
-      else return a.startTime - b.startTime;
+    if(a.startTime==b.startTime){
+      if(a.title == b.title) return a.desc.localeCompare(b.desc);
+      else return a.title.localeCompare(b.title);
+    }
+    else return a.startTime - b.startTime;
   });
   res.json(events);
 });
 
 router.get("/athletics/sports/all", auth.mw(["basic"]), (req, res) => {
   res.json(pingry.getAllAthleticEvents());
-})
+});
 
 router.get("/announcements", auth.mw(["basic"]), (req, res) => {
   res.json(pingry.getAnnouncements());
@@ -154,11 +155,100 @@ router.get("/lunch", auth.mw(["basic"]), (req, res) => {
 
 router.get("/override", auth.mw(["basic"]), (req, res) => {
   res.json(pingry.getOverride());
-})
+});
+
+router.get("/user/accessToken", rateLimit({windowMs: 5*60*1000,max: 5}), auth.mw(["basic"]), (req, res) => {
+  users.login(req.query.username, req.query.password).then(() => {
+    users.generateAccessToken(req.query.username).then((accessToken) => {
+      return res.status(200).json({accessToken});
+    }).catch(() => {
+      return res.status(500).send("Error generating access token");
+    });
+  }).catch(() => {
+    return res.status(400).send("Error logging in");
+  });
+});
+
+router.get("/user/username", auth.mw(["basic"]), (req, res) => {
+  users.getUsername(req.query.accessToken).then((username) => {
+    res.status(200).send(username);
+  }).catch(() => res.status(401).send("Invalid code"));
+});
+
+router.get("/user/pride_points", auth.mw(["basic"]), (req, res) => {
+  users.getPridePoints(req.query.accessToken).then((points) => {
+    res.status(200).send(points);
+  }).catch(() => res.status(401).send("Invalid code"));
+});
+
+router.get("/user/pride_events", auth.mw(["basic"]), (req, res) => {
+  users.getPrideEvents(req.query.accessToken).then((events) => {
+    res.status(200).json(events);
+  }).catch(() => res.status(401).send("Invalid code"));
+});
+
+router.get("/user/addPrideEvent", auth.mw(["basic"]), (req, res) => {
+  let code = req.query.code;
+  let accessToken = req.query.accessToken;
+  if(!code || !accessToken){
+    return res.status(400).send("Invalid request");
+  }
+  pingry.getPrideEventFromCode(code).then((e) => {
+    users.getPrideEvent(accessToken).then((events) => {
+      for(var i = 0; i < events.length; i++) {
+        if(events[i].id == e.id){
+          return res.status(400).send("User already attended this event.");
+        }
+      }
+      users.addPrideEvent(accessToken, e.id).then(() => {
+        users.addPridePoints(accessToken, e.points).then(() => {
+          return res.status(200).send("Event added");
+        }).catch(() => {
+          return res.status(500).send("Couldn't add pride points");
+        });
+        users.getUserInfo(accessToken).then((userInfo) => {
+          pingry.addGradePoints(userInfo.classInfo, e.point_worth);
+        });
+      }).catch(() => {
+        return res.status(500).send("Couldn't add pride event");
+      });
+    });
+  }).catch(() => {
+    res.status(400).send("Invalid code");
+  });
+});
+
+router.get("/pride/leaderboard", auth.mw(["basic"]), (req, res) => {
+  var leaders = pingry.getPrideLeaderboard();
+  res.json(leaders.sort((a,b) => b.total - a.total));
+});
+
+router.get("/pride/events", auth.mw(["basic"]), (req, res) => {
+  pingry.getAllPrideEvents().then(events => {
+    //Strip off the location codes
+    for(var i = 0; i < events.length; i++){
+      delete events[i].code;
+      delete events[i]._id;
+    }
+    res.status(200).json(events);
+  }).catch((err) => {
+    console.warn(err);
+    res.status(500).send("Error getting events...");
+  });
+});
+
+router.get("/pride/event/:id", auth.mw(["basic"]), (req, res) => {
+  pingry.getPrideEvent(req.params.id).then((e) => {
+    delete e.code;
+    return res.status(200).json(e);
+  }).catch(() => {
+    return res.status(400).send("Couldn't find that event!");
+  });
+});
 
 router.post("/updateOverride", auth.mw(["admin"]), (req, res) => {
   try {
-    var newOverride = JSON.parse(req.body.newJSON);
+    JSON.parse(req.body.newJSON);
     fs.writeFile(path.join(__dirname, "JSON_config", "RemoteConfig.json"), req.body.newJSON, (err) => {
       if(err){
         console.error("Error updating remote override file:");
@@ -166,30 +256,31 @@ router.post("/updateOverride", auth.mw(["admin"]), (req, res) => {
         return res.status(500).send("Error saving to file");
       }
       return res.status(200).send("Success");
-    })
-  }catch(e){ return res.status(400).send("Error parsing JSON")}
+    });
+  }catch(e){ return res.status(400).send("Error parsing JSON");}
 });
 
 router.post("/updateScheduleTypes", auth.mw(["admin"]), (req, res) => {
   try {
     var newSchedules = JSON.parse(req.body.newJSON);
-    fs.writeFile(path.join(__dirname, "JSON_config", "ScheduleTypes.json"), req.body.newJSON, (err) => {
-      if(err){
-        console.error("Error updating Schedule Type file:");
-        console.error(err);
-        return res.status(500).send("Error saving to file");
-      }
+    if(!Array.isArray(newSchedules)){
+      return res.status(400).send("Error parsing JSON: Not an array!");
+    }
+    pingry.updateSchedules(newSchedules).then(() => {
       return res.status(200).send("Success");
+    }).catch((err) => {
+      console.error("Error updating schedule types:", err);
+      return res.status(500).send("Error saving to database");
     });
   }catch(e){
     console.error(e);
     return res.status(400).send("Error parsing JSON");
   }
-})
+});
 
 router.post("/updateAthletics", auth.mw(["admin"]), (req, res) => {
   try {
-    var newAthletics = JSON.parse(req.body.newJSON);
+    JSON.parse(req.body.newJSON);
     fs.writeFile(path.join(__dirname, "JSON_config", "AthleticCalendars.json"), req.body.newJSON, (err) => {
       if(err){
         console.error("Error updating Athletic Calendar file:");
@@ -208,7 +299,8 @@ router.get("/forceRefresh", auth.mw(["admin"]), (req, res) => {
   pingry.refresh(() => {
     return res.status(200).send("Success");
   });
-})
+});
+
 
 setInterval(()=> pingry.refresh(), API_REFRESH_INTERVAL*60*1000);
 
@@ -217,4 +309,4 @@ module.exports.refresh = (cb) => {
   pingry.refresh(()=>{
     cb(true);
   });
-}
+};
