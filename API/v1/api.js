@@ -433,7 +433,7 @@ exports.PAPI1 = class {
                         title = title.substring(0, title.indexOf(":"));
                       }
                       if(event_type){
-                        title += event_type;
+                        title += " - "+event_type;
                       }
                     }
 
