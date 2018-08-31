@@ -24,7 +24,7 @@ const dfp = require('./dateFunctions');
 const path = require('path');
 const mongojs = require('mongojs');
 
-let db = mongojs('PingryAPI');
+let db = mongojs('mongodb://127.0.0.1:27017/PingryAPI');
 
 exports.PAPI1 = class {
   constructor(){
@@ -297,7 +297,6 @@ exports.PAPI1 = class {
       });
     }
     let checkIfDone = () => {
-      console.log(counter);
       if(counter == 0){
         var i;
 
@@ -320,6 +319,7 @@ exports.PAPI1 = class {
             this.allAthleticEvents = this.allAthleticEvents.concat(this.athleticSchedules[i]);
           }
         }
+        console.log(this.allAthleticEvents.length);
         this.allAthleticEvents.sort((a,b) => {
           if(a.startTime==b.startTime){
             if(a.title == b.title) return a.desc.localeCompare(b.desc);
@@ -350,6 +350,8 @@ exports.PAPI1 = class {
             this.scheduledEvents.CP[i] = this.override.eventsOverride.CP[i];
           }
         }
+
+        this.refreshing = false;
         if(callback){
           callback();
         }
@@ -389,29 +391,76 @@ exports.PAPI1 = class {
       checkIfDone();
     });
 
-    makeRequest(veracrossAthleticsURL, (res) => {
-      let events = JSON.parse(res);
-      for(var i = 0; i < events.length; i++){ //For each event
-        if(events.groups){
-          for(var j = 0; j < events.groups.length; j++){ //For each team the event is assigned to
-            for(var k = 0; k < this.athleticInfo.length; k++){ //Search for the team in athleticInfo
-              if(this.athleticInfo[k].veracross_id == events.groups[j].group_pk){ //See if the primary key matches
-                this.athleticSchedules[this.athleticInfo[k].id].push(events[i]); //If it does, add the event to the schedule for that team.
-              }
-            }
-          }
-        }
-      }
-    });
-
     counter++;
     db.collection("athleticteams").find((err, data) => {
       if(err){
         console.warn(err);
       }else{
         this.athleticInfo = data;
+        makeRequest(veracrossAthleticsURL, (res) => {
+          let events = JSON.parse(res);
+          for(var i = 0; i < events.length; i++){ //For each event
+            if(events[i].groups){ //Skip this part of the code
+              for(var j = 0; j < events[i].groups.length; j++){ //For each team the event is assigned to
+                for(var k = 0; k < this.athleticInfo.length; k++){ //Search for the team in athleticInfo
+                  if(this.athleticInfo[k].veracross_id == events[i].groups[j].group_pk){ //See if the primary key matches
+                    if(!this.athleticSchedules[this.athleticInfo[k].id]) //If this calendar doesn't have any events yet, calendar is empty
+                      this.athleticSchedules[this.athleticInfo[k].id] = [];
+
+                    let startTime;
+                    let campus_departure_time;
+                    let title = events[i].primary_group;
+                    let event_type = events[i].event_type;
+                    if(events[i].start_date){
+                      startTime = new Date(
+                        parseInt(events[i].start_date.substring(0,4)),
+                        parseInt(events[i].start_date.substring(5,7))-1,
+                        parseInt(events[i].start_date.substring(8,10))
+                      );
+                      if(events[i].start_time){
+                        startTime.setHours(parseInt(events[i].start_time.substring(11, 13)));
+                        startTime.setMinutes(parseInt(events[i].start_time.substring(14, 16)));
+                        startTime.setSeconds(parseInt(events[i].start_time.substring(14, 16)));
+                      }
+                    }
+
+                    if(events[i].campus_departure_time){
+                      campus_departure_time = events[i].campus_departure_time.substring(11,19);
+                    }
+
+                    if(title){
+                      if(title.indexOf(":") != -1){
+                        title = title.substring(0, title.indexOf(":"));
+                      }
+                      if(event_type){
+                        title += event_type;
+                      }
+                    }
+
+                    this.athleticSchedules[this.athleticInfo[k].id].push({
+                      startTime,
+                      athletic_opponent:events[i].athletic_opponent,
+                      campus_departure_time,
+                      desc:events[i].description,
+                      event_type,
+                      event_status:events[i].event_status,
+                      game_outcome:events[i].game_outcome,
+                      game_placement:events[i].game_placement,
+                      google_map:events[i].google_map,
+                      location:events[i].location,
+                      primary_group: events[i].primary_group,
+                      groups: events[i].groups,
+                      title
+                      //TODO:Finish this list
+                    }); //If it does, add the event to the schedule for that team.
+                  }
+                }
+              }
+            }
+          }
+        });
         for(var i = 0; i < this.athleticInfo.length; i++){
-          if(!this.athleticInfo[i].veracross_id){
+          if(!this.athleticInfo[i].veracross_id && this.athleticInfo[i].url){
             ((sportId) => {
               makeRequest(this.athleticInfo[i].url, (res) => {
                 let calEvents = feedParse.parseCalendar(res);
@@ -440,6 +489,7 @@ exports.PAPI1 = class {
                     title = title.substring(0, title.indexOf(" - "));
                     calEvents[j].title = title;
                     calEvents[j].desc = desc;
+                    calEvents[j].event_status = desc.indexOf("CANCELLED")==-1?"N/A":"Cancelled";
                   }
                 }
 

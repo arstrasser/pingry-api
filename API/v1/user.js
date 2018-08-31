@@ -4,12 +4,7 @@ const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 const tokenLength = 40;
 
-let db = mongojs('PingryAPI');
-let ldapClient = ldap.createClient({
-  url: "ldap://psmcdc1.pingry.k12.nj.us",
-  connectTimeout:5000,
-  timeout: 10000
-});
+let db = mongojs('mongodb://127.0.0.1:27017/PingryAPI');
 
 exports.userManager = class {
   constructor(){
@@ -29,9 +24,15 @@ exports.userManager = class {
 
   login(username, password){
     return new Promise((resolve, reject) => {
+      let ldapClient = ldap.createClient({
+        url: "ldap://psmcdc1.pingry.k12.nj.us",
+        connectTimeout:5000,
+        timeout: 10000
+      });
       ldapClient.bind(username, password, (err) => {
         if(err) reject(err);
         resolve();
+        ldapClient.unbind();
       });
     });
   }
