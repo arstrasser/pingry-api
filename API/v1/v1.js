@@ -157,7 +157,7 @@ router.get("/override", auth.mw(["basic"]), (req, res) => {
   res.json(pingry.getOverride());
 });
 
-router.get("/user/accessToken", rateLimit({windowMs: 5*60*1000,max: 5}), auth.mw(["basic"]), (req, res) => {
+router.get("/user/accessToken", auth.mw(["basic"]), rateLimit({windowMs: 5*60*1000,max: 5}), (req, res) => {
   users.login(req.query.username, req.query.password).then(() => {
     users.generateAccessToken(req.query.username).then((accessToken) => {
       return res.status(200).json({accessToken});
