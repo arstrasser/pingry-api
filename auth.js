@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-module.exports.auth1 = class {
+module.exports.auth = class {
   logger(req) {
     console.log(new Date().toISOString()+": "+req.method+
     " "+req.originalUrl+" - "+req.user+"@"+req.ip);

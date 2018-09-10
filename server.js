@@ -24,7 +24,7 @@ const v1 = require('./API/v1/v1');
 
 //App setup
 let app = new express();
-let auth = new (require("./auth").auth1)();
+let auth = new (require("./auth").auth)();
 
 app.use(bodyParser.json());
 
