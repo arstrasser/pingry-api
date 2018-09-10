@@ -13,7 +13,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 let pingry = new (require("./api").PAPI1)();
 let users = new (require("./user").userManager)();
-let auth = new (require("../../auth").auth1)();
+let auth = new (require("./auth").auth1)();
 
 router.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");

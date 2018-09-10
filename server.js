@@ -54,15 +54,14 @@ var httpServer = new express();
 httpServer.use(function(req, res) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.redirect("https://compsci.pingry.k12.nj.us:3001"+req.url);
+  res.redirect("https://pingrytoday.pingry.org:3001"+req.url);
 })
 httpServer.listen(PORT_HTTP);
 
 v1.refresh(() => {
   https.createServer({
-    key:fs.readFileSync('./TLS_cert/key.pem'),
-    cert: fs.readFileSync('./TLS_cert/cert.pem'),
-    passphrase: "Exce11ence&H0n0r"
+    key:fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/cert.pem')
   }, app).listen(PORT_HTTPS, () => console.log("SERVER LISTENING..."))
 });
 
