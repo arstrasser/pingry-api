@@ -249,7 +249,7 @@ router.get("/pride/event/:id", auth.mw(["basic"]), (req, res) => {
 router.post("/updateOverride", auth.mw(["admin"]), (req, res) => {
   try {
     JSON.parse(req.body.newJSON);
-    fs.writeFile(path.join(__dirname, "JSON_config", "RemoteConfig.json"), req.body.newJSON, (err) => {
+    fs.writeFile(path.join(__dirname, "..","..", "JSON_config", "RemoteConfig.json"), req.body.newJSON, (err) => {
       if(err){
         console.error("Error updating remote override file:");
         console.error(err);
@@ -281,7 +281,7 @@ router.post("/updateScheduleTypes", auth.mw(["admin"]), (req, res) => {
 router.post("/updateAthletics", auth.mw(["admin"]), (req, res) => {
   try {
     JSON.parse(req.body.newJSON);
-    fs.writeFile(path.join(__dirname, "JSON_config", "AthleticCalendars.json"), req.body.newJSON, (err) => {
+    fs.writeFile(path.join(__dirname, "..","..", "JSON_config", "AthleticCalendars.json"), req.body.newJSON, (err) => {
       if(err){
         console.error("Error updating Athletic Calendar file:");
         console.error(err);
