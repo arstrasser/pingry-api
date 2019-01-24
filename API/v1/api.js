@@ -148,9 +148,9 @@ exports.PAPI1 = class {
     ];
   }
 
-  getPrideEvent(id){
+  async getPrideEvent(id){
     return new Promise((resolve, reject) => {
-      db.collection("prideevents").findOne({id}, (err, data) => {
+      db.collection("prideevents").findOne({_id:mongojs.ObjectId(id)}, (err, data) => {
         if(err){
           reject(err);
         }else{
@@ -160,25 +160,75 @@ exports.PAPI1 = class {
     });
   }
 
-  getPrideEventFromCode(code) {
+  async getPrideEventFromCode(code) {
     return new Promise((resolve, reject) => {
       db.collection("prideevents").findOne({code}, (err, doc) => {
+        console.log(doc);
         if(err){
           reject(err);
+        }else if(!doc){
+          reject("Not found");
+        }else if(!doc.active){
+          reject("Not yet active");
         }else{
+          doc.id = doc._id.toHexString();
+          delete doc._id;
           resolve(doc);
         }
       });
     });
   }
 
-  getAllPrideEvents(){
+  async increaseEventCount(id){
     return new Promise((resolve, reject) => {
-      db.collection("prideevents").find((err, data) => {
+      db.collection("prideevents").update(
+        {_id:mongojs.ObjectId(id)},
+        {$inc:{numberAttended:1}},
+        {},
+        (err) => {
+          if(err){ reject(err); }
+          else resolve();
+        });
+    });
+  }
+
+  async getAllPrideEvents(){
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").find({}, (err, data) => {
         if(err){
           reject(err);
         }else{
+          for(let i in data){
+            data[i].id = data[i]._id.toHexString();
+            delete data[i]._id;
+          }
           resolve(data);
+        }
+      });
+    });
+  }
+
+  async createPrideEvent(name, points, code){
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").insert({name, points, code, active:false, numberAttended:0}, (err, doc) => {
+        if(err){
+          reject(err);
+        }else{
+          doc.id = doc._id.toHexString();
+          delete doc._id;
+          resolve(doc);
+        }
+      });
+    });
+  }
+
+  async setPrideEventActive(id, isActive){
+    return new Promise((resolve, reject) => {
+      db.collection("prideevents").update({_id:mongojs.ObjectId(id)}, {$set:{active:isActive}}, (err) => {
+        if(err){
+          reject(err);
+        }else{
+          resolve();
         }
       });
     });
@@ -265,9 +315,9 @@ exports.PAPI1 = class {
   addGradePoints(year, numPoints){
     let d = new Date();
     let freshmanClassYear;
-    if(d.getMonth() >= 7 ) freshmanClassYear = d.getFullYear() + 4; //Resets at the beginning of august
+    if(d.getMonth() >= 7 ) freshmanClassYear = d.getFullYear() + 4; //Resets at the beginning of August to the next class year
     else freshmanClassYear = d.getFullYear() + 3;
-    let index = year - freshmanClassYear;
+    let index = freshmanClassYear - year;
     if(index >= 0 && index < 4){
       this.gradePointTotals[index] += numPoints;
       return true;
@@ -372,7 +422,7 @@ exports.PAPI1 = class {
 
     counter++;
     this.gradePointTotals = [0, 0, 0, 0];
-    db.collection("users").find((err, data) => {
+    db.collection("users").find({}, (err, data) => {
       let d = new Date();
       let freshmanClassYear;
       if(d.getMonth() >= 7 ) freshmanClassYear = d.getFullYear() + 4; //Resets at the beginning of august
@@ -381,9 +431,11 @@ exports.PAPI1 = class {
         console.warn(err);
       }else{
         for(var i = 0; i < data.length; i++){
-          let index = data[i].year - freshmanClassYear;
-          if(index >= 0 && index < 4){
-            this.gradePointTotals[index] += data[i].pridePoints;
+          if(data[i].type == "student"){
+            let index = freshmanClassYear - data[i].year;
+            if(index >= 0 && index < 4){
+              this.gradePointTotals[index] += data[i].pridePoints;
+            }
           }
         }
       }
@@ -398,7 +450,13 @@ exports.PAPI1 = class {
       }else{
         this.athleticInfo = data;
         makeRequest(veracrossAthleticsURL, (res) => {
-          let events = JSON.parse(res);
+          try{
+            var events = JSON.parse(res);
+          }catch(e) {
+            console.warn("ERROR PARSING VERACROSS JSON");
+            return;
+          }
+          this.athleticSchedules = [];
           for(var i = 0; i < events.length; i++){ //For each event
             if(events[i].groups){ //Skip this part of the code
               for(var j = 0; j < events[i].groups.length; j++){ //For each team the event is assigned to
@@ -458,55 +516,58 @@ exports.PAPI1 = class {
               }
             }
           }
-        });
-        for(var i = 0; i < this.athleticInfo.length; i++){
-          if(!this.athleticInfo[i].veracross_id && this.athleticInfo[i].url){
-            ((sportId) => {
-              makeRequest(this.athleticInfo[i].url, (res) => {
-                let calEvents = feedParse.parseCalendar(res);
-                for(var j = 0; j < calEvents.length; j++){
-                  delete calEvents[j].uid;
 
-                  //Day type event
-                  if(calEvents[j].type == "day"){
-                    //Set the start time to be the time (makes for easier sorting and display)
-                    calEvents[j].startTime = calEvents[j].time;
-                    delete calEvents[j].time;
+          //Waiting until after Veracross in case Veracross fails
+          //If veracross fails, we want to keep the old events instead of getting new ones.
+          for(i = 0; i < this.athleticInfo.length; i++){
+            if(!this.athleticInfo[i].veracross_id && this.athleticInfo[i].url){
+              ((sportId) => {
+                makeRequest(this.athleticInfo[i].url, (res) => {
+                  let calEvents = feedParse.parseCalendar(res);
+                  for(var j = 0; j < calEvents.length; j++){
+                    delete calEvents[j].uid;
+
+                    //Day type event
+                    if(calEvents[j].type == "day"){
+                      //Set the start time to be the time (makes for easier sorting and display)
+                      calEvents[j].startTime = calEvents[j].time;
+                      delete calEvents[j].time;
+                    }
+
+                    //Convert javascript dates to numbers
+                    if(calEvents[j].hasOwnProperty("startTime")){
+                      calEvents[j].startTime = calEvents[j].startTime.getTime();
+                    }
+                    if(calEvents[j].hasOwnProperty("endTime")){
+                      calEvents[j].endTime = calEvents[j].endTime.getTime();
+                    }
+
+                    //Fix titles and add descriptions
+                    if(calEvents[j].desc == undefined){
+                      var title = calEvents[j].title;
+                      var desc = title.substring(title.indexOf(" - ")+3);
+                      title = title.substring(0, title.indexOf(" - "));
+                      calEvents[j].title = title;
+                      calEvents[j].desc = desc;
+                      calEvents[j].event_status = desc.indexOf("CANCELLED")==-1?"N/A":"Cancelled";
+                    }
                   }
 
-                  //Convert javascript dates to numbers
-                  if(calEvents[j].hasOwnProperty("startTime")){
-                    calEvents[j].startTime = calEvents[j].startTime.getTime();
-                  }
-                  if(calEvents[j].hasOwnProperty("endTime")){
-                    calEvents[j].endTime = calEvents[j].endTime.getTime();
-                  }
+                  //Sorts the event by time, then by title, then by description
+                  calEvents.sort((a,b) => {
+                    if(a.startTime==b.startTime){
+                      if(a.title == b.title) return a.desc.localeCompare(b.desc);
+                      else return a.title.localeCompare(b.title);
+                    }
+                    else return a.startTime - b.startTime;
+                  });
 
-                  //Fix titles and add descriptions
-                  if(calEvents[j].desc == undefined){
-                    var title = calEvents[j].title;
-                    var desc = title.substring(title.indexOf(" - ")+3);
-                    title = title.substring(0, title.indexOf(" - "));
-                    calEvents[j].title = title;
-                    calEvents[j].desc = desc;
-                    calEvents[j].event_status = desc.indexOf("CANCELLED")==-1?"N/A":"Cancelled";
-                  }
-                }
-
-                //Sorts the event by time, then by title, then by description
-                calEvents.sort((a,b) => {
-                  if(a.startTime==b.startTime){
-                    if(a.title == b.title) return a.desc.localeCompare(b.desc);
-                    else return a.title.localeCompare(b.title);
-                  }
-                  else return a.startTime - b.startTime;
+                  this.athleticSchedules[sportId] = calEvents;
                 });
-
-                this.athleticSchedules[sportId] = calEvents;
-              });
-            })(this.athleticInfo[i].id);
+              })(this.athleticInfo[i].id);
+            }
           }
-        }
+        });
       }
       counter--;
       checkIfDone();

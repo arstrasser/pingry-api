@@ -9,7 +9,7 @@
 const PORT_HTTP = 3000;
 const PORT_HTTPS = 3001;
 const KEY_REFRESH_INTERVAL = 5; //Will refresh the api keys every X minutes
-const RATE_LIMIT_WINDOW = 15; //Will limit users based in X minute intervals
+const RATE_LIMIT_WINDOW = 10; //Will limit users based in X minute intervals
 
 //Imports
 const express = require('express');
@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 app.use(helmet());
 app.use(rateLimit({
   windowMs: RATE_LIMIT_WINDOW*60*1000, // 15 minutes
-  max: 100
+  max: 150
 }));
 
 app.get("/testPermission", (req, res, next) => {

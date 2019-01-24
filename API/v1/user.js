@@ -44,7 +44,9 @@ exports.userManager = class {
       }
       db.collection("users").findOne({"accessTokens":accessToken}, (err, doc) => {
         if(err){
-          reject(err);
+          return reject(err);
+        }else if(!doc){
+          return reject("User not found!");
         }
         resolve(doc);
       });
@@ -57,33 +59,44 @@ exports.userManager = class {
       key += chars[Math.floor(Math.random()*chars.length)];
     }
     return new Promise((resolve, reject) => {
-      db.collection("users").findAndModify({
-        query:{"username":username},
-        update:{"$push":{"accessTokens":key}},
-        new: false
-      }, (err) =>{
-        if(err){
+      db.collection("users").find({"username":username}, (err, docs) => {
+        if(err) return reject(err);
+        //This user has never logged in before
+        if(docs.length < 1){
           let type = "";
           let year = -1;
           if(username.indexOf("@") < 6 || isNaN(username.substring(username.indexOf("@")-4, username.indexOf("@")))){ //If the username is doesn't contain a year
             type = "teacher";
           }else {
+            type = "student";
             year = parseInt(username.substring(username.indexOf("@")-4, username.indexOf("@")));
           }
           db.collection("users").insert({
             "username":username,
             type,
             year,
+            pridePoints:0,
+            prideEvents:[],
             accessTokens:[key]
           }, (err) => {
             if(err) reject(err);
-            resolve(key);
+            else resolve(key);
           });
-        }else if(err){
-          //TODO:Find type of error for if statement above.
-          reject(err);
+          return;
         }
-        resolve(key);
+
+        //This user has logged in before
+        else {
+          db.collection("users").update(
+            {"username":username},
+            {"$push":{"accessTokens":key}},
+            {},
+            (err) => {
+              if(err) reject(err);
+              else resolve(key);
+            }
+          );
+        }
       });
     });
   }
@@ -92,7 +105,7 @@ exports.userManager = class {
     return (await this.getUserFromAccess(accessToken)).username;
   }
 
-  async getUserinfo(accessToken){
+  async getUserInfo(accessToken){
     let user = await this.getUserFromAccess(accessToken);
     return {username:user.username, type:user.type, year:user.year};
   }
@@ -118,6 +131,21 @@ exports.userManager = class {
           reject(err);
         }
         resolve(doc);
+      });
+    });
+  }
+
+  async addPridePoints(accessToken, points){
+    return new Promise((resolve, reject) => {
+      if(!this.validAccessToken(accessToken)){
+        reject("INVALID ACCESS TOKEN FORMAT");
+      }
+      if(typeof points == "string") points = parseInt(points);
+      db.collection("users").update({"accessTokens":accessToken}, {"$inc":{"pridePoints":points}}, (err) => {
+        if(err){
+          reject(err);
+        }
+        resolve();
       });
     });
   }
