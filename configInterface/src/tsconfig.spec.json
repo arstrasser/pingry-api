@@ -11,7 +11,8 @@
     ]
   },
   "files": [
-    "test.ts"
+    "test.ts",
+    "pollyfills.ts"
   ],
   "include": [
     "**/*.spec.ts",

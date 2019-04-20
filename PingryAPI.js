@@ -22,6 +22,8 @@ const https = require('https');
 const bodyParser = require('body-parser');
 const v1 = require('./API/v1/v1');
 
+const debugMode = process.argv.length > 2 && process.argv[2] == "debug";
+
 //App setup
 let app = new express();
 let auth = new (require("./auth").auth)();
@@ -58,10 +60,18 @@ httpServer.use(function(req, res) {
 })
 httpServer.listen(PORT_HTTP);
 
+var httpsKey = "";
+var httpsCert = "";
+
+if(!debugMode){
+  httpsKey = fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/privkey.pem')
+  httpsCert = fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/cert.pem');
+}
+
 v1.refresh(() => {
   https.createServer({
-    key:fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/privkey.pem'),
-    cert: fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/cert.pem')
+    key:httpsKey,
+    cert: httpsCert
   }, app).listen(PORT_HTTPS, () => console.log("SERVER LISTENING..."))
 });
 
