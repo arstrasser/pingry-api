@@ -320,6 +320,24 @@ router.post("/updateScheduleTypes", auth.mw(["admin"]), (req, res) => {
   }
 });
 
+router.post("/updateDDD", auth.mw(["admin"]), (req, res) => {
+  try {
+    var newDDD = JSON.parse(req.body.newJSON);
+    if(Array.isArray(newDDD)){
+      return res.status(400).send("Error parsing JSON: Found an array!");
+    }
+    pingry.updateDDD(newDDD).then(() => {
+      return res.status(200).send("Success");
+    }, (err) => {
+      console.error("Error updating schedule types:", err);
+      return res.status(500).send("Error saving to database");
+    });
+  }catch(e){
+    console.error(e);
+    return res.status(400).send("Error parsing JSON");
+  }
+});
+
 router.post("/updateAthletics", auth.mw(["admin"]), (req, res) => {
   try {
     JSON.parse(req.body.newJSON);

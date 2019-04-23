@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { ViewEncapsulation } from '@angular/core';
 import { JsonManagerService} from '../json-manager.service';
+import { AppComponent } from '../app.component';
 import {MatTableDataSource, MatSort, MatSnackBar} from '@angular/material';
 import {ErrorStateMatcher} from '@angular/material/core';
 import {FormControl, FormGroupDirective, NgForm, Validators} from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-ddd-page',
@@ -11,7 +13,7 @@ import {FormControl, FormGroupDirective, NgForm, Validators} from '@angular/form
   styleUrls: ['./ddd-page.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class DddPageComponent {
+export class DddPageComponent implements OnInit {
   columns = ["date", "type"]
   data = [];
   dataSource = new MatTableDataSource<Element>(this.data);
@@ -21,20 +23,46 @@ export class DddPageComponent {
     {value:"fancy", title:"Dress up Day"},
     {value:"spirit", title:"Spirit Day"},
   ];
-  constructor(private manager:JsonManagerService, public snackBar:MatSnackBar) {
-    this.manager.addRefreshCallback(() => this.update());
+  ddd:any = {};
+
+  constructor(private manager:JsonManagerService, public snackBar:MatSnackBar, private http:HttpClient, private app:AppComponent) {}
+
+  ngOnInit() {
+    this.refresh();
+    this.app.publishFunction = () => {
+      return new Promise((resolve, reject) => {
+        this.http.post("/v1/updateDDD?api_key="+this.manager.apiKey, {newJSON:JSON.stringify(this.ddd)}, {responseType:"text"}).subscribe(res => {
+          resolve(res);
+        }, res => {
+          reject(res);
+        });
+      }).finally(() => {
+        setTimeout(() => this.refresh(), 1000);
+      });
+    };
+    this.app.discardFunction = () => {
+      this.refresh();
+    }
   }
+
+  refresh(){
+    this.http.get("/v1/ddd?api_key="+this.manager.apiKey).subscribe(res => {
+      this.app.changed = false;
+      this.ddd = res;
+      this.update();
+    });
+  }
+
 
   update(){
     this.data = [];
-    for(let i in this.manager.json.ddd){
-      if(this.manager.json.ddd.hasOwnProperty(i)){
-        this.data.push({"date":i, "type":this.manager.json.ddd[i]});
+    for(let i in this.ddd){
+      if(this.ddd.hasOwnProperty(i)){
+        this.data.push({"date":i, "type":this.ddd[i]});
       }
     }
     this.data.push({"date":this.manager.dateToDayString(new Date()), "type":"", "temp":true})
     this.dataSource = new MatTableDataSource<Element>(this.data);
-    console.log(this.data);
   }
 
   onDateChange(elem, event){
@@ -42,13 +70,13 @@ export class DddPageComponent {
     if(elem.temp){
       elem.date = str;
     }else{
-      if(this.manager.json.ddd.hasOwnProperty(str)){
+      if(this.ddd.hasOwnProperty(str)){
         this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
       }else{
-        delete this.manager.json.ddd[elem.date];
-        this.manager.json.ddd[str] = elem.type;
-        this.manager.change();
+        delete this.ddd[elem.date];
+        this.ddd[str] = elem.type;
         this.update();
+        this.app.changed = true;
       }
     }
   }
@@ -60,23 +88,23 @@ export class DddPageComponent {
 
   onValueChange(elem, event){
     if(elem.temp) return;
-    this.manager.json.ddd[elem.date] = event.value;
-    this.manager.change();
+    this.ddd[elem.date] = event.value;
+    this.app.changed = true;
   }
 
   removeItem(item){
-    delete this.manager.json.ddd[item.date];
-    this.manager.change();
+    delete this.ddd[item.date];
     this.update();
+    this.app.changed = true;
   }
 
   addItem(item){
-    if(this.manager.json.ddd.hasOwnProperty(item.date)){
+    if(this.ddd.hasOwnProperty(item.date)){
       this.snackBar.open("This date already exists", "Close", {panelClass:"snackbar-error", duration:3000})
     }else if(this.manager.checkDate(item.date) && item.type != ""){
-      this.manager.json.ddd[item.date] = item.type;
+      this.ddd[item.date] = item.type;
       this.update();
-      this.manager.change();
+      this.app.changed = true;
     }else{
       this.snackBar.open("Invalid options", "Close", {panelClass:"snackbar-error", duration:3000});
     }

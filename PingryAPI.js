@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 app.use(helmet());
 app.use(rateLimit({
   windowMs: RATE_LIMIT_WINDOW*60*1000, // 15 minutes
-  max: 150
+  max: 200
 }));
 
 app.get("/testPermission", (req, res, next) => {

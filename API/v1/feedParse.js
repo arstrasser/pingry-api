@@ -357,8 +357,8 @@ exports.parseCalendar = (data) => {
         }
       }
       if(!found){
-        console.log("Not Found: ");
-        console.log(list[i]);
+        //console.log("Not Found: ");
+        //console.log(list[i]);
       }
     }
   }

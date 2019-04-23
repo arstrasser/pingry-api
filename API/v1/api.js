@@ -38,12 +38,13 @@ exports.PAPI1 = class {
     this.news = [];
     this.menuStartDate = null;
     this.myMenu = [];
+    this.ddd = {};
     this.manualSchedules = {};
     this.athleticInfo = [];
     this.athleticSchedules = {};
     this.allAthleticEvents = [];
     this.gradePointTotals = [0, 0, 0, 0];
-    this.override = {"ddd":{}, "scheduleOverride":{}, "letterOverride":{}, "eventsOverride":{CT:{}, CP:{}}};
+    this.override = {"scheduleOverride":{}, "letterOverride":{}, "eventsOverride":{CT:{}, CP:{}}};
     this.letterTimes = [
       {"letter":"A", "schedule":[1,2,3,4], "dates":[]},
       {"letter":"B", "schedule":[5,6,7,1], "dates":[]},
@@ -288,7 +289,7 @@ exports.PAPI1 = class {
   }
 
   getDDDSchedule(){
-    return this.override.ddd;
+    return this.ddd;
   }
 
   getOverride(){
@@ -325,6 +326,48 @@ exports.PAPI1 = class {
     }else{
       return false;
     }
+  }
+
+  async updateSchedules(newSchedules){
+    return new Promise((resolve, reject) => {
+      db.collection("scheduletypes").remove({}, false, (err)=> {
+        if(err){
+          reject(err);
+        }
+        else{
+          db.collection("scheduletypes").insert(newSchedules, (err) => {
+            if(err){
+              reject(err);
+            }
+            resolve();
+          });
+        }
+      });
+    });
+  }
+
+  async updateDDD(newDDD){
+    return new Promise((resolve, reject) => {
+      db.collection("ddd").remove({}, false, (err)=> {
+        if(err){
+          reject(err);
+        }
+        else{
+          var update = [];
+          for(var i in newDDD){
+            if(newDDD.hasOwnProperty(i)){
+              update.push({"date":i, "type":newDDD[i]});
+            }
+          }
+          db.collection("ddd").insert(update, (err) => {
+            if(err){
+              reject(err);
+            }
+            resolve();
+          });
+        }
+      });
+    });
   }
 
   refresh(callback){
@@ -416,6 +459,20 @@ exports.PAPI1 = class {
         console.warn(err);
       }else{
         this.typeList = data;
+      }
+      counter--;
+      checkIfDone();
+    });
+
+    counter++;
+    db.collection("ddd").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.ddd = {};
+        for(let i = 0; i < data.length; i++){
+          this.ddd[data[i].date] = data[i].type;
+        }
       }
       counter--;
       checkIfDone();

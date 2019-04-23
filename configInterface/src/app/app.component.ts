@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {JsonManagerService} from './json-manager.service';
 import {MatDialog, MatDialogRef, MatSnackBar} from '@angular/material';
+import { HttpClient } from '@angular/common/http';
 import {
   PublishDialogComponent,
   CancelDialogComponent,
@@ -25,16 +26,18 @@ export class AppComponent {
     {title:"Athletic Cals", url:"/athletics"}
   ];
 
+  public publishFunction:Function;
+  public discardFunction:Function;
+
   changed:boolean = false;
 
-  constructor(private manager:JsonManagerService, private dialog:MatDialog, private route: ActivatedRoute, private snackbar:MatSnackBar){
+  constructor(private manager:JsonManagerService, private dialog:MatDialog, private route: ActivatedRoute, private snackbar:MatSnackBar, private http:HttpClient){
 
   }
 
   ngOnInit() {
     console.log("Initialized");
     this.manager.hasValidKey((valid)=> {
-      console.log(valid);
       if(valid){
         this.manager.refresh();
       }else {
@@ -70,22 +73,29 @@ export class AppComponent {
   }
 
   hasChanged():boolean{
-    return this.manager.changed;
+    return this.changed;
   }
 
   publish() {
     let dialogRef = this.dialog.open(PublishDialogComponent);
     dialogRef.afterClosed().subscribe(result => {
       if(result){
+        this.changed = false;
         let d2 = this.dialog.open(SpinnerDialogComponent, {closeOnNavigation:false,disableClose:true, width:"150px", height:"150px"});
-        this.manager.saveJson((success) => {
+        this.publishFunction().then(() => {
+          this.http.get("/v1/forceRefresh?api_key="+this.manager.apiKey, {responseType:"text"}).subscribe(res => {
+            console.log(res);
+            this.snackbar.open("Updated successfully", "Close", {duration:3000});
+            d2.close();
+          }, res => {
+            console.error("Error refreshing server:", res);
+            this.snackbar.open("Updated, but error refreshing server.", "Close", {panelClass:"snackbar-error", duration:3000});
+            d2.close();
+          });
+        }, res => {
+          console.error("Error updating JSON:", res);
+          this.snackbar.open("Error updating JSON!", "Close", {panelClass:"snackbar-error", duration:3000});
           d2.close();
-          if(success){
-            this.snackbar.open("JSON updated", "Close", {duration:3000});
-            this.manager.refresh();
-          }else{
-            this.snackbar.open("Error updating JSON!", "Close", {panelClass:"snackbar-error", duration:3000});
-          }
         });
       }
     });
@@ -95,7 +105,7 @@ export class AppComponent {
     let dialogRef = this.dialog.open(CancelDialogComponent);
     dialogRef.afterClosed().subscribe(result => {
       if(result){
-        this.manager.refresh();
+        this.discardFunction();
       }
     });
   }

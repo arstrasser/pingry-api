@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 export class JsonManagerService {
   json:any = {};
   scheduleTypes:any = [];
-  athletics:any = [];
   changed:boolean = false;
   apiKey:string = "";
 
@@ -15,16 +14,16 @@ export class JsonManagerService {
     this.apiKey = localStorage.getItem("apiKey") || "";
   }
 
-  isValidKey(key, callback){
+  isValidKey(key:string, callback:Function){
     if(key=="") return callback(false);
-    this.http.get("/testPermission?permission=admin&api_key="+key, {responseType: 'text'}).subscribe((res) => callback(true), (res) => callback(false));
+    this.http.get("/testPermission?permission=admin&api_key="+key, {responseType: 'text'}).subscribe(() => callback(true), () => callback(false));
   }
 
-  hasValidKey(callback){
+  hasValidKey(callback:Function){
     this.isValidKey(this.apiKey, callback);
   }
 
-  addRefreshCallback(callback){
+  addRefreshCallback(callback:Function){
     this.refreshCallbacks.push(callback);
     if(!this.isRefreshing()){
       callback();
@@ -55,7 +54,8 @@ export class JsonManagerService {
   }
 
   refresh(){
-    this.refreshing = 3;
+    this.refreshing = 4;
+
     this.http.get("/v1/override?api_key="+this.apiKey).subscribe(res => {
       this.json = res;
       this.refreshing--;
@@ -66,22 +66,16 @@ export class JsonManagerService {
       this.refreshing--;
       this.checkDoneRefreshing();
     }, err => {if(err.status == 401){this.apiKey = ""; this.saveKey();}});
-    this.http.get("/v1/athletics/calendarList?api_key="+this.apiKey).subscribe(res => {
-      this.athletics = res;
-      this.refreshing--;
-      this.checkDoneRefreshing();
-    });
     this.changed = false;
   }
 
-  checkDate(date){
+  checkDate(date:string){
     if(parseInt(date) != NaN && (""+parseInt(date)).length==8){
       if(date.substring(0,2) == "20" || date.substring(0,2) == "21"){
         var month = parseInt(date.substring(4,6));
         if(month > 0 && month <= 12) {
-          var d;
           try {
-            d = new Date(date.substring(0, 4), month - 1, date.substring(6,8));
+            new Date(parseInt(date.substring(0, 4)), month - 1, parseInt(date.substring(6,8)));
           }catch(e){
             return false;
           }
@@ -105,14 +99,7 @@ export class JsonManagerService {
         })
       }
     }
-
-    console.log(JSON.stringify(this.athletics));
-    if(this.athletics[this.athletics.length - 1].hasOwnProperty("temp")){
-      this.athletics.pop();
-    }
     this.http.post("/v1/updateOverride?api_key="+this.apiKey, {newJSON:JSON.stringify(this.json)}, {responseType:"text"}).subscribe(
-      res => afterUpdate(true), res => afterUpdate(false));
-    this.http.post("/v1/updateAthletics?api_key="+this.apiKey, {newJSON:JSON.stringify(this.athletics)}, {responseType:"text"}).subscribe(
       res => afterUpdate(true), res => afterUpdate(false));
   }
 }
