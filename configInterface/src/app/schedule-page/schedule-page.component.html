@@ -27,11 +27,11 @@
         <mat-cell *matCellDef="let element" style="flex: 2;">
           <mat-form-field *ngIf="element.type == 'automatic'">
             <mat-select  [(ngModel)]="element.name" [ngModelOptions]="{standalone: true}" (change)="onValueChange(element, $event)">
-              <mat-option *ngFor="let option of scheduleOptions" [value]="option">{{option}}</mat-option>
+              <mat-option *ngFor="let option of scheduleTypes" [value]="option">{{option}}</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field *ngIf="element.type == 'manual'" style="width: calc(100% - 50px)">
-            <textarea matInput [(ngModel)]="element.classes" [ngModelOptions]="{standalone: true}" (change)="onValueChange(element, $event)"></textarea>
+            <textarea matInput [(ngModel)]="element.schedule" [ngModelOptions]="{standalone: true}" (change)="onValueChange(element, $event)"></textarea>
           </mat-form-field>
           <button type="button" (click)="removeItem(element)" style="float:right" mat-icon-button *ngIf="!element.temp">
             <mat-icon>close</mat-icon>

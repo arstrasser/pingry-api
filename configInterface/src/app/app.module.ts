@@ -25,9 +25,10 @@ import { AppComponent } from './app.component';
 import { AthleticsPageComponent } from './athletics-page/athletics-page.component';
 import { DddPageComponent } from './ddd-page/ddd-page.component';
 import { SchedulePageComponent } from './schedule-page/schedule-page.component';
+import { ScheduleTypesPageComponent } from './schedule-types-page/schedule-types-page.component';
 import { LetterPageComponent } from './letter-page/letter-page.component';
 import { EventPageComponent } from './event-page/event-page.component';
-import { JsonManagerService } from './json-manager.service';
+import { ApikeyPageComponent } from './apikey-page/apikey-page.component';
 import {
   PublishDialogComponent,
   CancelDialogComponent,
@@ -41,7 +42,9 @@ const appRoutes:Routes = [
   {path: 'letter', component: LetterPageComponent},
   {path: 'events', component: EventPageComponent},
   {path: 'ddd', component: DddPageComponent},
-  {path: 'athletics', component: AthleticsPageComponent}
+  {path: 'athletics', component: AthleticsPageComponent},
+  {path: 'schedule-types', component: ScheduleTypesPageComponent},
+  {path: 'apikeys', component:ApikeyPageComponent}
 ]
 
 @NgModule({
@@ -52,6 +55,8 @@ const appRoutes:Routes = [
     SchedulePageComponent,
     LetterPageComponent,
     EventPageComponent,
+    ScheduleTypesPageComponent,
+    ApikeyPageComponent,
     PublishDialogComponent,
     CancelDialogComponent,
     LoginDialogComponent,
@@ -86,7 +91,7 @@ const appRoutes:Routes = [
     LogoutDialogComponent,
     SpinnerDialogComponent
   ],
-  providers: [JsonManagerService],
+  providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

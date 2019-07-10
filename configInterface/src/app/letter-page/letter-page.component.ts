@@ -1,8 +1,9 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { JsonManagerService } from '../json-manager.service';
+import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
+import { AppComponent } from '../app.component';
 import {MatTableDataSource, MatSort, MatSnackBar} from '@angular/material';
 import {ErrorStateMatcher} from '@angular/material/core';
 import {FormControl, FormGroupDirective, NgForm, Validators} from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-letter-page',
@@ -12,7 +13,7 @@ import {FormControl, FormGroupDirective, NgForm, Validators} from '@angular/form
 })
 export class LetterPageComponent {
   columns = ["date", "letter"]
-  data = [];
+  data:any = [];
   dataSource = new MatTableDataSource<Element>(this.data);
   letterOptions = [
     {value:"A", title:"A"},
@@ -24,73 +25,119 @@ export class LetterPageComponent {
     {value:"G", title:"G"},
     {value:"R", title:"Review Day"}
   ];
-  constructor(private manager:JsonManagerService, public snackBar:MatSnackBar) {
-    this.manager.addRefreshCallback(() => this.update());
+
+  @ViewChild(MatSort) sort: MatSort;
+
+  constructor(public snackBar:MatSnackBar, private http:HttpClient, private app:AppComponent) {
+    this.refresh();
+    this.app.publishFunction = () => {
+      return new Promise((resolve, reject) => {
+        this.http.post("/v1/override/letter?api_key="+this.app.apiKey, {newJSON:JSON.stringify(this.data.slice(0,-1))}, {responseType:"text"}).subscribe(res => {
+          resolve(res);
+        }, res => {
+          reject(res);
+        });
+      }).finally(() => {
+        setTimeout(() => this.refresh(), 1000);
+      });
+    };
+    this.app.discardFunction = () => {
+      this.refresh();
+    }
+  }
+
+  refresh(){
+    this.http.get("/v1/override/letter?api_key="+this.app.apiKey).subscribe(res => {
+      this.app.changed = false;
+      this.data = res;
+      console.log(this.data);
+      this.update();
+    });
   }
 
   update(){
-    this.data = [];
-    for(let i in this.manager.json.letterOverride){
-      if(this.manager.json.letterOverride.hasOwnProperty(i)){
-        this.data.push({"date":i, "letter":this.manager.json.letterOverride[i]});
-      }
-    }
-    this.data.push({"date":this.manager.dateToDayString(new Date()), "letter":"", "temp":true})
+    //If it's not there, we should add a temp element.
+    if(this.data.length == 0 || !this.data[this.data.length-1].temp)
+      this.data.push({"date":this.app.dateToDayString(new Date()), "letter":"", "temp":true});
+    this.data.sort((a,b) => a.temp?1:a.date.localeCompare(b.date));
     this.dataSource = new MatTableDataSource<Element>(this.data);
-    console.log(this.data);
   }
 
   onDateChange(elem, event){
-    var str = this.manager.dateToDayString(event.value);
+    var str = this.app.dateToDayString(event.value);
     if(elem.temp){
       elem.date = str;
       return true;
     }else{
-      if(this.manager.json.letterOverride.hasOwnProperty(str)){
-        this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
+      //Check if we have a valid date format
+      if(!this.app.checkDate(elem.date)){
+        this.snackBar.open("Please enter a valid date!", "Close", {panelClass:"snackbar-error", duration:3000});
         return false;
-      }else{
-        delete this.manager.json.letterOverride[elem.date];
-        this.manager.json.letterOverride[str] = elem.letter;
-        this.manager.change();
-        this.update();
-        return true;
       }
+
+      //Check if this date already exists
+      for(let i = 0; i < this.data.length - 1; i++){
+        if(this.data[i].date == str){
+          this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
+          return false;
+        }
+      }
+
+      elem.date = str;
+
+      this.change();
+      return true;
     }
   }
 
+  change(){
+    this.update();
+    this.app.changed = true;
+  }
+
   getDateFromString(str){
-    if(!this.manager.checkDate(str)) return new Date();
+    if(!this.app.checkDate(str)) return new Date();
     return new Date(str.substring(0,4), parseInt(str.substring(4,6)) - 1, str.substring(6,8));
   }
 
   onValueChange(elem){
-    console.log(elem);
-    if(elem.temp) return;
-    this.manager.json.letterOverride[elem.date] = elem.letter;
-    this.manager.change();
+    if(elem.temp == true) return true;
+    this.change();
   }
 
 
-  removeItem(item){
-    delete this.manager.json.letterOverride[item.date];
-    this.manager.change();
-    this.update();
-  }
-
-  addItem(item){
-    if(this.manager.json.letterOverride.hasOwnProperty(item.date)){
-      this.snackBar.open("This date already exists", "Close", {panelClass:"snackbar-error", duration:3000})
-    }else if(this.manager.checkDate(item.date) && item.letter != ""){
-      this.manager.json.letterOverride[item.date] = item.letter;
-      this.update();
-      this.manager.change();
-    }else {
-      this.snackBar.open("Invalid options", "Close", {panelClass:"snackbar-error", duration:3000});
+  removeItem(elem){
+    for(let i = 0; i < this.data.length; i++){
+      if(this.data[i].date == elem.date && this.data[i].letter == elem.letter){
+        this.data.splice(i,1);
+        break;
+      }
     }
+    this.change();
   }
 
-  ngOnInit(){}
+  addItem(elem){
+    console.log(elem);
+    if(elem.letter == ""){
+      this.snackBar.open("Please specify a letter.", "Close", {panelClass:"snackbar-error", duration:3000});
+      return false;
+    }
+
+    if(!this.app.checkDate(elem.date)){
+      this.snackBar.open("Please enter a valid date!", "Close", {panelClass:"snackbar-error", duration:3000});
+      return false;
+    }
+
+    for(let i = 0; i < this.data.length - 1; i++){
+      if(this.data[i].date == elem.date){
+        this.snackBar.open("That date already exists!", "Close", {panelClass:"snackbar-error", duration:3000});
+        return false;
+      }
+    }
+
+    delete elem.temp;
+    this.change();
+  }
 }
 
 export interface Element {

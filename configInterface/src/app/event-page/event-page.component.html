@@ -12,11 +12,11 @@
           </mat-form-field>
         </mat-cell>
       </ng-container>
-      <ng-container matColumnDef="event">
+      <ng-container matColumnDef="name">
         <mat-header-cell *matHeaderCellDef>Event</mat-header-cell>
         <mat-cell *matCellDef="let element">
           <mat-form-field>
-            <input matInput type="text" [(ngModel)]="element.event" (change)="onValueChange(element, $event, true)" [ngModelOptions]="{standalone: true}">
+            <input matInput type="text" [(ngModel)]="element.name" (change)="onValueChange(element, $event, true)" [ngModelOptions]="{standalone: true}">
           </mat-form-field>
           <button type="button" (click)="removeItem(element, true)" mat-icon-button *ngIf="!element.temp">
             <mat-icon>close</mat-icon>
@@ -44,11 +44,11 @@
           </mat-form-field>
         </mat-cell>
       </ng-container>
-      <ng-container matColumnDef="event">
+      <ng-container matColumnDef="name">
         <mat-header-cell *matHeaderCellDef>Event</mat-header-cell>
         <mat-cell *matCellDef="let element">
           <mat-form-field>
-            <input matInput type="text" [(ngModel)]="element.event" (change)="onValueChange(element, $event, false)" [ngModelOptions]="{standalone: true}">
+            <input matInput type="text" [(ngModel)]="element.name" (change)="onValueChange(element, $event, false)" [ngModelOptions]="{standalone: true}">
           </mat-form-field>
           <button type="button" (click)="removeItem(element, false)" mat-icon-button *ngIf="!element.temp">
             <mat-icon>close</mat-icon>

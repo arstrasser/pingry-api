@@ -6,9 +6,8 @@
 
 
 //Configuration
-const PORT_HTTP = 3000;
-const PORT_HTTPS = 3001;
-const KEY_REFRESH_INTERVAL = 5; //Will refresh the api keys every X minutes
+const PORT_HTTP = 80;
+const PORT_HTTPS = 443;
 const RATE_LIMIT_WINDOW = 10; //Will limit users based in X minute intervals
 
 //Imports
@@ -36,6 +35,10 @@ app.use(rateLimit({
   max: 200
 }));
 
+app.get("/", (req, res) => {
+  res.redirect("https://www.pingry.org/hp/pingry-today-app-support");
+})
+
 app.get("/testPermission", (req, res, next) => {
   return auth.mw([req.query.permission])(req, res, next);
 }, (req, res) => {
@@ -50,30 +53,28 @@ app.get("/configuration/*", (req, res) => {
 
 app.use('/v1', v1.router);
 
-//app.use('/v2', v2.router);
-
 var httpServer = new express();
-httpServer.use(function(req, res) {
+httpServer.use((req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.redirect("https://pingrytoday.pingry.org:3001"+req.url);
+  res.redirect("https://pingrytoday.pingry.org"+req.url);
 })
 httpServer.listen(PORT_HTTP);
 
 var httpsKey = "";
 var httpsCert = "";
+var chain = "";
 
 if(!debugMode){
   httpsKey = fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/privkey.pem')
   httpsCert = fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/cert.pem');
+  chain = fs.readFileSync('/etc/letsencrypt/live/pingrytoday.pingry.org/chain.pem')
 }
 
 v1.refresh(() => {
   https.createServer({
     key:httpsKey,
-    cert: httpsCert
+    cert: httpsCert,
+    ca: chain
   }, app).listen(PORT_HTTPS, () => console.log("SERVER LISTENING..."))
 });
-
-//Reloads the api keys file
-setInterval(()=>apiKeys = JSON.parse(fs.readFileSync("./api_keys.json")), KEY_REFRESH_INTERVAL*60*1000);

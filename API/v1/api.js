@@ -25,6 +25,17 @@ const dfp = require('./dateFunctions');
 const path = require('path');
 const mongojs = require('mongojs');
 
+const letterInfo = [
+  {"letter":"A", "schedule":[1,2,3,4]},
+  {"letter":"B", "schedule":[5,6,7,1]},
+  {"letter":"C", "schedule":[2,3,4,5]},
+  {"letter":"D", "schedule":[6,7,1,2]},
+  {"letter":"E", "schedule":[3,4,5,6]},
+  {"letter":"F", "schedule":[7,1,2,3]},
+  {"letter":"G", "schedule":[4,5,6,7]},
+  {"letter":"R", "schedule":[1,2,3,4,5,6,7]}
+];
+
 let db = mongojs('mongodb://127.0.0.1:27017/PingryAPI');
 
 exports.PAPI1 = class {
@@ -32,29 +43,26 @@ exports.PAPI1 = class {
     //Global Variables:
     this.refreshing = false;
     this.scheduledDays = {};
-    this.scheduledEvents = {CP:{}, CT:{}};
+    this.cpEvents = {};
+    this.ctEvents = {};
+    this.cpOverride = [];
+    this.ctOverride = [];
     this.typeList = [];
     this.announcements = [];
     this.news = [];
     this.menuStartDate = null;
     this.myMenu = [];
     this.ddd = {};
-    this.manualSchedules = {};
     this.athleticInfo = [];
     this.athleticSchedules = {};
     this.allAthleticEvents = [];
     this.gradePointTotals = [0, 0, 0, 0];
-    this.override = {"scheduleOverride":{}, "letterOverride":{}, "eventsOverride":{CT:{}, CP:{}}};
-    this.letterTimes = [
-      {"letter":"A", "schedule":[1,2,3,4], "dates":[]},
-      {"letter":"B", "schedule":[5,6,7,1], "dates":[]},
-      {"letter":"C", "schedule":[2,3,4,5], "dates":[]},
-      {"letter":"D", "schedule":[6,7,1,2], "dates":[]},
-      {"letter":"E", "schedule":[3,4,5,6], "dates":[]},
-      {"letter":"F", "schedule":[7,1,2,3], "dates":[]},
-      {"letter":"G", "schedule":[4,5,6,7], "dates":[]},
-      {"letter":"R", "schedule":[1,2,3,4,5,6,7], "dates":[]}
-    ];
+    this.scheduleOverride = [];
+    this.letterOverride = [];
+    this.letterTimes = JSON.parse(JSON.stringify(letterInfo));
+    for(let i =0; i < this.letterTimes.length; i++){
+      this.letterTimes[i].dates = [];
+    }
   }
 
   letterToNumber(letter){
@@ -81,8 +89,14 @@ exports.PAPI1 = class {
   }
 
   getLetterIndexOf(str){
+    //Combine Letter Day override
+    for(let i = 0; i < this.letterOverride.length; i++){
+      if(str == this.letterOverride[i].date){
+        return this.letterToNumber(this.letterOverride[i].letter);
+      }
+    }
     //Iterate through each letter
-    for(let i = 0; i < this.letterTimes.length; i+=1){
+    for(let i = 0; i < this.letterTimes.length; i++){
       //Iterate through each date
       for(let j = 0; j < this.letterTimes[i].dates.length; j++){
         //If the date equals the date we're looking for
@@ -96,8 +110,120 @@ exports.PAPI1 = class {
     return -1;
   }
 
-  getScheduledEvents(){
-    return this.scheduledEvents;
+  getOverriddenLetterDayDates(letter){
+    let dates = JSON.parse(JSON.stringify(this.letterTimes))[this.letterToNumber(letter)].dates;
+    for(let i = 0; i < this.letterOverride.length; i++){
+      //If the date exists somewhere, we need to remove it.
+      for(let j = 0; j < dates.length; j++){
+        if(dates[j] == this.letterOverride[i].date){
+          //Return the index
+          dates.splice(j, 1);
+          break;
+        }
+      }
+      if(this.letterOverride[i].letter == letter){
+        dates.push(this.letterOverride[i].date);
+      }
+    }
+    return dates;
+  }
+
+  getOverriddenLetterTimes(){
+    let letterTimes = JSON.parse(JSON.stringify(letterInfo));
+    for(let i = 0; i < letterTimes.length; i++){
+      letterTimes[i].dates = this.getOverriddenLetterDayDates(letterTimes[i].letter);
+    }
+    return letterTimes;
+  }
+
+  getLetterInfo(){
+    return letterInfo;
+  }
+
+  getLetterOverride(){
+    return this.letterOverride;
+  }
+
+  async updateLetterOverride(newOverride){
+    this.letterOverride = newOverride;
+
+    return new Promise((resolve, reject) => {
+      db.collection("letteroverride").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("letteroverride").insert(newOverride, (err) =>{
+          if(err){
+            console.warn("LETTER OVERRIDE LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
+  }
+
+  getCTEvents(){
+    let ct = JSON.parse(JSON.stringify(this.ctEvents)); //Deep copy the object
+    for(var i = 0; i < this.ctOverride.length; i++){
+      ct[this.ctOverride[i].date] = this.ctOverride[i].name;
+    }
+    return ct;
+  }
+
+  getCTOverride(){
+    return this.ctOverride;
+  }
+
+  async updateCTOverride(newOverride){
+    this.ctOverride = newOverride;
+    return new Promise((resolve, reject) => {
+      db.collection("ctevents").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("ctevents").insert(newOverride, (err) =>{
+          if(err){
+            console.warn("CT EVENTS LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
+  }
+
+  getCPEvents(){
+    let cp = JSON.parse(JSON.stringify(this.cpEvents)); //Deep copy the object
+    for(var i = 0; i < this.cpOverride.length; i++){
+      cp[this.cpOverride[i].date] = this.cpOverride[i].name;
+    }
+    return cp;
+  }
+
+  getCPOverride(){
+    return this.cpOverride;
+  }
+
+  async updateCPOverride(newOverride){
+    this.cpOverride = newOverride;
+    return new Promise((resolve, reject) => {
+      db.collection("cpevents").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("cpevents").insert(newOverride, (err) =>{
+          if(err){
+            console.warn("CP EVENTS LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
   }
 
   getLetterForDate(d) {
@@ -112,19 +238,95 @@ exports.PAPI1 = class {
     return this.athleticInfo;
   }
 
-  getAllSchedules(){
-    return this.scheduledDays;
+  getScheduleOverride(){
+    return this.scheduleOverride;
   }
 
-  getAllManualSchedules(){
-    return this.manualSchedules;
+  async updateScheduleOverride(newOverride){
+    this.scheduleOverride = newOverride;
+    return new Promise((resolve, reject) => {
+      db.collection("scheduleoverride").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("scheduleoverride").insert(newOverride, (err) =>{
+          if(err){
+            console.warn("SCHEDULE OVERRIDE LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
+  }
+
+  getScheduleByName(name) {
+    for(let i = 0; i < this.typeList.length; i++){
+      //If found the respective schedule for the day
+      if(this.typeList[i].name == name){
+        return this.typeList[i].schedule;
+      }
+    }
+    console.error("Couldn't find schedule: "+name);
+    return [];
+  }
+
+  getScheduleForDate(d){
+    //If there is an override for this day
+    for(let i = 0; i < this.scheduleOverride.length; i++){
+      if(this.scheduleOverride[i].date == d){
+        if(this.scheduleOverride[i].type == "manual"){
+          return {schedule: this.scheduleOverride[i].schedule, name: "manual"};
+        }else{
+          return {schedule: this.getScheduleByName(this.scheduleOverride[i].name), name: this.scheduleOverride[i].name};
+        }
+      }
+    }
+
+    //If there is a special schedule
+    if(this.scheduledDays != null && this.scheduledDays[d] != undefined){
+      return {schedule: this.getScheduleByName(this.scheduledDays[d]), name:this.scheduledDays[d]};
+    }
+
+    //If there is no special schedule (override or regular assembly)
+    if(this.getLetterForDate(d)!== null){
+      //Fallback: Return the normal schedule
+      return {schedule: this.typeList[0].schedule, name: this.typeList[0].name};
+    }
+
+    //If absolutely no schedule
+    return {schedule: [], name: "No Schedule"};
+  }
+
+  getAllSchedules(){
+    let schedules = {};
+
+    //Add all the overrides
+    for(let i = 0; i < this.scheduleOverride.length; i++){
+      let override = this.scheduleOverride[i];
+      if(override.type == "manual"){
+        schedules[override.date] = {type:override.type, schedule: override.schdeule};
+      }else{
+        schedules[override.date] = {type:override.type, name:override.name};
+      }
+    }
+
+    //Add all the regular schedules
+    for(let date in this.scheduledDays){
+      if(this.scheduledDays.hasOwnProperty(date) && !schedules[date]){
+        schedules[date] = {type:"automatic", name:this.scheduledDays[date]};
+      }
+    }
+
+    return schedules;
   }
 
   getScheduleTypes(){
     return this.typeList;
   }
 
-  updateScheduleTypes(newTypes){
+  async updateScheduleTypes(newTypes){
     this.typeList = newTypes;
     return new Promise((resolve, reject) => {
       db.collection("scheduletypes").remove({}, (err) =>{
@@ -133,6 +335,8 @@ exports.PAPI1 = class {
         }
         db.collection("scheduletypes").insert(newTypes, (err) =>{
           if(err){
+            console.warn("SCHEDULE TYPES LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
             reject(err);
           }
           resolve();
@@ -236,38 +440,6 @@ exports.PAPI1 = class {
     });
   }
 
-  getScheduleForDate(d){
-    //If there is a special schedule
-    if(this.scheduledDays != null && this.scheduledDays[d] != undefined){
-      if(this.scheduledDays[d] == "manual"){
-        const override = this.override.scheduleOverride[d];
-        if(override && override.type == "manual"){
-          return {schedule: override.classes, name: "manual"};
-        }
-        else{
-          console.error("Couldn't find manual schedule!");
-        }
-      }
-      else {
-        //Iterate over the schedule types
-        for(let i = 0; i < this.typeList.length; i++){
-          //If found the respective schedule for the day
-          if(this.typeList[i].name == this.scheduledDays[d]){
-            return {schedule: this.typeList[i].schedule, name: this.typeList[i].name};
-          }
-        }
-        console.error("Couldn't find schedule: "+this.scheduledDays[d]);
-      }
-    }
-
-    if(this.getLetterForDate(d)!== null){
-      //Fallback: Return the normal schedule
-      return {schedule: this.typeList[0].schedule, name: this.typeList[0].name};
-    }
-
-    return {schedule: [], name: "No Schedule"};
-  }
-
   getAllAthleticSchedules(){
     return this.athleticSchedules;
   }
@@ -284,16 +456,35 @@ exports.PAPI1 = class {
     return this.announcements;
   }
 
+  async updateAthleticSchedules(newSchedules){
+    return new Promise((resolve, reject) => {
+      db.collection("athleticteams").remove({}, (err) =>{
+        if(err){
+          reject(err);
+        }
+        db.collection("athleticteams").insert(newSchedules, (err) =>{
+          if(err){
+            console.warn("SCHEDULE TYPES LOST. ERROR WHILE UPDATING:");
+            console.warn(err);
+            reject(err);
+          }
+
+          //Updating the athletic schedules is a complicated operation.
+          //We refresh here instead of using a hotfix
+          this.refresh(() => {
+            resolve();
+          });
+        });
+      });
+    });
+  }
+
   getNews(){
     return this.news;
   }
 
   getDDDSchedule(){
     return this.ddd;
-  }
-
-  getOverride(){
-    return this.override;
   }
 
   getLunchMenu(){
@@ -328,25 +519,8 @@ exports.PAPI1 = class {
     }
   }
 
-  async updateSchedules(newSchedules){
-    return new Promise((resolve, reject) => {
-      db.collection("scheduletypes").remove({}, false, (err)=> {
-        if(err){
-          reject(err);
-        }
-        else{
-          db.collection("scheduletypes").insert(newSchedules, (err) => {
-            if(err){
-              reject(err);
-            }
-            resolve();
-          });
-        }
-      });
-    });
-  }
-
   async updateDDD(newDDD){
+    this.ddd = newDDD;
     return new Promise((resolve, reject) => {
       db.collection("ddd").remove({}, false, (err)=> {
         if(err){
@@ -361,6 +535,8 @@ exports.PAPI1 = class {
           }
           db.collection("ddd").insert(update, (err) => {
             if(err){
+              console.warn("DDD LOST. ERROR WHILE UPDATING:");
+              console.warn(err);
               reject(err);
             }
             resolve();
@@ -394,19 +570,6 @@ exports.PAPI1 = class {
       if(counter == 0){
         var i;
 
-        this.manualSchedules = {};
-        //Combine schedule override
-        for(i in this.override.scheduleOverride){
-          if(this.override.scheduleOverride.hasOwnProperty(i)){
-            if(this.override.scheduleOverride[i].type == "manual"){
-              this.scheduledDays[i] = "manual";
-              this.manualSchedules[i] = this.override.scheduleOverride[i].classes;
-            }else{
-              this.scheduledDays[i] = this.override.scheduleOverride[i].name;
-            }
-          }
-        }
-
         this.allAthleticEvents = [];
         for(i in this.athleticSchedules){
           if(this.athleticSchedules.hasOwnProperty(i)){
@@ -422,29 +585,6 @@ exports.PAPI1 = class {
           else return a.startTime - b.startTime;
         });
 
-        //Combine Letter Day override
-        for(i in this.override.letterOverride){
-          if(this.override.letterOverride.hasOwnProperty(i)){
-            var letterIndex = this.getLetterIndexOf(i);
-            if(letterIndex !== -1){
-              this.letterTimes[letterIndex].dates.splice(this.letterTimes[letterIndex].dates.indexOf(i), 1);
-            }
-            this.letterTimes[this.letterToNumber(this.override.letterOverride[i])].dates.push(i);
-          }
-        }
-
-        //Combine CT and CP overrides
-        for(i in this.override.eventsOverride.CT){
-          if(this.override.eventsOverride.CT.hasOwnProperty(i)){
-            this.scheduledEvents.CT[i] = this.override.eventsOverride.CT[i];
-          }
-        }
-        for(i in this.override.eventsOverride.CP){
-          if(this.override.eventsOverride.CP.hasOwnProperty(i)){
-            this.scheduledEvents.CP[i] = this.override.eventsOverride.CP[i];
-          }
-        }
-
         this.refreshing = false;
         if(callback){
           callback();
@@ -453,6 +593,29 @@ exports.PAPI1 = class {
     };
 
     this.refreshing = true;
+
+    counter++;
+    db.collection("letteroverride").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.letterOverride = data;
+      }
+      counter--;
+      checkIfDone();
+    });
+
+    counter++;
+    db.collection("scheduleoverride").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.scheduleOverride = data;
+      }
+      counter--;
+      checkIfDone();
+    });
+
     counter++;
     db.collection("scheduletypes").find((err, data) => {
       if(err){
@@ -473,6 +636,28 @@ exports.PAPI1 = class {
         for(let i = 0; i < data.length; i++){
           this.ddd[data[i].date] = data[i].type;
         }
+      }
+      counter--;
+      checkIfDone();
+    });
+
+    counter++;
+    db.collection("ctevents").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.ctOverride = data;
+      }
+      counter--;
+      checkIfDone();
+    });
+
+    counter++;
+    db.collection("cpevents").find((err, data) => {
+      if(err){
+        console.warn(err);
+      }else{
+        this.cpOverride = data;
       }
       counter--;
       checkIfDone();
@@ -515,61 +700,61 @@ exports.PAPI1 = class {
             return;
           }
           this.athleticSchedules = [];
-          for(var i = 0; i < events.length; i++){ //For each event
-            if(events[i].groups){ //Skip this part of the code
-              for(var j = 0; j < events[i].groups.length; j++){ //For each team the event is assigned to
-                for(var k = 0; k < this.athleticInfo.length; k++){ //Search for the team in athleticInfo
-                  if(this.athleticInfo[k].veracross_id == events[i].groups[j].group_pk){ //See if the primary key matches
-                    if(!this.athleticSchedules[this.athleticInfo[k].id]) //If this calendar doesn't have any events yet, calendar is empty
-                      this.athleticSchedules[this.athleticInfo[k].id] = [];
+          for(let i = 0; i < events.length; i++){ //For each event
+            if(events[i].primary_group){ //Skip this part of the code
+              for(var k = 0; k < this.athleticInfo.length; k++){ //Search for the team in athleticInfo
+                let group = this.athleticInfo[k].veracross_id;
+                if(group && group == events[i].primary_group.substring(0,group.length)){ //See if the primary key matches
+                  if(!this.athleticSchedules[this.athleticInfo[k].id]) //If this calendar doesn't have any events yet, calendar is empty
+                    this.athleticSchedules[this.athleticInfo[k].id] = [];
 
-                    let startTime;
-                    let campus_departure_time;
-                    let title = events[i].primary_group;
-                    let event_type = events[i].event_type;
-                    if(events[i].start_date){
-                      startTime = new Date(
-                        parseInt(events[i].start_date.substring(0,4)),
-                        parseInt(events[i].start_date.substring(5,7))-1,
-                        parseInt(events[i].start_date.substring(8,10))
-                      );
-                      if(events[i].start_time){
-                        startTime.setHours(parseInt(events[i].start_time.substring(11, 13)));
-                        startTime.setMinutes(parseInt(events[i].start_time.substring(14, 16)));
-                        startTime.setSeconds(parseInt(events[i].start_time.substring(14, 16)));
-                      }
+                  let startTime;
+                  let campus_departure_time;
+                  let title = events[i].primary_group;
+                  let event_type = events[i].event_type;
+                  if(events[i].start_date){
+                    startTime = new Date(
+                      parseInt(events[i].start_date.substring(0,4)),
+                      parseInt(events[i].start_date.substring(5,7))-1,
+                      parseInt(events[i].start_date.substring(8,10))
+                    );
+                    if(events[i].start_time){
+                      startTime.setHours(parseInt(events[i].start_time.substring(11, 13)));
+                      startTime.setMinutes(parseInt(events[i].start_time.substring(14, 16)));
+                      //TODO: is this right for seconds?
+                      startTime.setSeconds(parseInt(events[i].start_time.substring(14, 16)));
                     }
-
-                    if(events[i].campus_departure_time){
-                      campus_departure_time = events[i].campus_departure_time.substring(11,19);
-                    }
-
-                    if(title){
-                      if(title.indexOf(":") != -1){
-                        title = title.substring(0, title.indexOf(":"));
-                      }
-                      if(event_type){
-                        title += " - "+event_type;
-                      }
-                    }
-
-                    this.athleticSchedules[this.athleticInfo[k].id].push({
-                      startTime,
-                      athletic_opponent:events[i].athletic_opponent,
-                      campus_departure_time,
-                      desc:events[i].description,
-                      event_type,
-                      event_status:events[i].event_status,
-                      game_outcome:events[i].game_outcome,
-                      game_placement:events[i].game_placement,
-                      google_map:events[i].google_map,
-                      location:events[i].location,
-                      primary_group: events[i].primary_group,
-                      groups: events[i].groups,
-                      title
-                      //TODO:Finish this list
-                    }); //If it does, add the event to the schedule for that team.
                   }
+
+                  if(events[i].campus_departure_time){
+                    campus_departure_time = events[i].campus_departure_time.substring(11,19);
+                  }
+
+                  if(title){
+                    if(title.indexOf(":") != -1){
+                      title = title.substring(0, title.indexOf(":"));
+                    }
+                    if(event_type){
+                      title += " - "+event_type;
+                    }
+                  }
+
+                  this.athleticSchedules[this.athleticInfo[k].id].push({
+                    startTime,
+                    athletic_opponent:events[i].athletic_opponent,
+                    campus_departure_time,
+                    desc:events[i].description,
+                    event_type,
+                    event_status:events[i].event_status,
+                    game_outcome:events[i].game_outcome,
+                    game_placement:events[i].game_placement,
+                    google_map:events[i].google_map,
+                    location:events[i].location,
+                    primary_group: events[i].primary_group,
+                    groups: events[i].groups,
+                    title
+                    //TODO:Finish this list
+                  }); //If it does, add the event to the schedule for that team.
                 }
               }
             }
@@ -577,7 +762,7 @@ exports.PAPI1 = class {
 
           //Waiting until after Veracross in case Veracross fails
           //If veracross fails, we want to keep the old events instead of getting new ones.
-          for(i = 0; i < this.athleticInfo.length; i++){
+          for(let i = 0; i < this.athleticInfo.length; i++){
             if(!this.athleticInfo[i].veracross_id && this.athleticInfo[i].url){
               ((sportId) => {
                 makeRequest(this.athleticInfo[i].url, (res) => {
@@ -728,10 +913,12 @@ exports.PAPI1 = class {
           //console.log(calEvents[i]);
         }
       }
-      this.scheduledEvents = {CT, CP};
+      this.ctEvents = CT;
+      this.cpEvents = CP;
+
       this.scheduledDays = specialSchedule;
 
-      //Make this request later to make sure nothing overlaps
+      //Make these requests later to make sure nothing overlaps
       makeRequest(collabDatesURL, (res) => {
         let calEvents = feedParse.parseCalendar(res);
         for(let i=0; i<calEvents.length; i++){
@@ -800,8 +987,13 @@ exports.PAPI1 = class {
         otherNewsRequestDone = true;
       }
     });
+
     makeRequest(lunchURL+Date.now(), res => {
       let contents = JSON.parse(res);
+      if(!contents.menu || !contents.menu_config || !contents.menu.config.grid || !contents.menu.menu){
+        if(!this.myMenu) this.myMenu = [];
+        return;
+      }
       //const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const servingDays = contents.menu.config.grid.servingDays;
       const mealsServed = contents.menu.config.grid.mealsServed;

@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { ViewEncapsulation } from '@angular/core';
-import { JsonManagerService} from '../json-manager.service';
 import { AppComponent } from '../app.component';
 import {MatTableDataSource, MatSort, MatSnackBar} from '@angular/material';
 import {ErrorStateMatcher} from '@angular/material/core';
@@ -25,13 +24,13 @@ export class DddPageComponent implements OnInit {
   ];
   ddd:any = {};
 
-  constructor(private manager:JsonManagerService, public snackBar:MatSnackBar, private http:HttpClient, private app:AppComponent) {}
+  constructor(public snackBar:MatSnackBar, private http:HttpClient, private app:AppComponent) {}
 
   ngOnInit() {
     this.refresh();
     this.app.publishFunction = () => {
       return new Promise((resolve, reject) => {
-        this.http.post("/v1/updateDDD?api_key="+this.manager.apiKey, {newJSON:JSON.stringify(this.ddd)}, {responseType:"text"}).subscribe(res => {
+        this.http.post("/v1/updateDDD?api_key="+this.app.apiKey, {newJSON:JSON.stringify(this.ddd)}, {responseType:"text"}).subscribe(res => {
           resolve(res);
         }, res => {
           reject(res);
@@ -46,7 +45,7 @@ export class DddPageComponent implements OnInit {
   }
 
   refresh(){
-    this.http.get("/v1/ddd?api_key="+this.manager.apiKey).subscribe(res => {
+    this.http.get("/v1/ddd?api_key="+this.app.apiKey).subscribe(res => {
       this.app.changed = false;
       this.ddd = res;
       this.update();
@@ -61,12 +60,16 @@ export class DddPageComponent implements OnInit {
         this.data.push({"date":i, "type":this.ddd[i]});
       }
     }
-    this.data.push({"date":this.manager.dateToDayString(new Date()), "type":"", "temp":true})
+    this.data.sort((a,b) => {
+      if(a.temp) return 1;
+      a.date.localeCompare(b.date);
+    });
+    this.data.push({"date":this.app.dateToDayString(new Date()), "type":"", "temp":true})
     this.dataSource = new MatTableDataSource<Element>(this.data);
   }
 
-  onDateChange(elem, event){
-    var str = this.manager.dateToDayString(event.value);
+  onDateChange(elem:Element, event){
+    var str = this.app.dateToDayString(event.value);
     if(elem.temp){
       elem.date = str;
     }else{
@@ -81,27 +84,27 @@ export class DddPageComponent implements OnInit {
     }
   }
 
-  getDateFromString(str){
-    if(!this.manager.checkDate(str)) return new Date();
-    return new Date(str.substring(0,4), parseInt(str.substring(4,6)) - 1, str.substring(6,8));
+  getDateFromString(str:string){
+    if(!this.app.checkDate(str)) return new Date();
+    return new Date(parseInt(str.substring(0,4)), parseInt(str.substring(4,6)) - 1, parseInt(str.substring(6,8)));
   }
 
-  onValueChange(elem, event){
+  onValueChange(elem:Element, event){
     if(elem.temp) return;
     this.ddd[elem.date] = event.value;
     this.app.changed = true;
   }
 
-  removeItem(item){
+  removeItem(item:Element){
     delete this.ddd[item.date];
     this.update();
     this.app.changed = true;
   }
 
-  addItem(item){
+  addItem(item:Element){
     if(this.ddd.hasOwnProperty(item.date)){
       this.snackBar.open("This date already exists", "Close", {panelClass:"snackbar-error", duration:3000})
-    }else if(this.manager.checkDate(item.date) && item.type != ""){
+    }else if(this.app.checkDate(item.date) && item.type != ""){
       this.ddd[item.date] = item.type;
       this.update();
       this.app.changed = true;
@@ -114,4 +117,5 @@ export class DddPageComponent implements OnInit {
 export interface Element {
   date:string;
   type:string;
+  temp?:boolean;
 }

@@ -1,0 +1,42 @@
+<div class="apikey-page">
+  <form class="apikey-form">
+    <mat-table #table [dataSource]="dataSource">
+      <ng-container matColumnDef="key">
+        <mat-header-cell *matHeaderCellDef style="flex: 2">API Key</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 2">
+          <mat-form-field>
+            <input matInput disabled [value]="element.key">
+          </mat-form-field>
+          <button type="button" (click)="regenKey(element)" mat-icon-button>
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="owner">
+        <mat-header-cell *matHeaderCellDef style="flex: 2">Owner</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 2">
+          <mat-form-field style="width:250px">
+            <input matInput type="text" [(ngModel)]="element.owner" (change)="onOwnerChange(element)" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="permissions">
+        <mat-header-cell *matHeaderCellDef style="flex: 2">Permissions</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 2">
+          <mat-form-field>
+            <input matInput type="text" [ngModel]="element.permissions.join(',')" (change)="onPermChange(element, $event)" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+          <button type="button" (click)="removeItem(element, true)" mat-icon-button *ngIf="!element.temp">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button type="button" (click)="addItem(element, true)" mat-icon-button *ngIf="element.temp">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="columns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columns;"></mat-row>
+    </mat-table>
+  </form>
+</div>

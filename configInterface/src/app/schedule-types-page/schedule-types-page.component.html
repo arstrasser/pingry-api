@@ -1,0 +1,30 @@
+<div class="schedule-types-page">
+  <form class="schedule-form">
+    <mat-table #table [dataSource]="dataSource">
+      <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef style="flex: 1;">Name</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 1;">
+          <mat-form-field>
+            <input matInput [(ngModel)]="element.name" (change)="onNameChange(element)" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="schedule">
+        <mat-header-cell *matHeaderCellDef style="flex: 4;">Value</mat-header-cell>
+        <mat-cell *matCellDef="let element" style="flex: 4;">
+          <mat-form-field style="width: calc(100% - 50px)">
+            <textarea matInput [(ngModel)]="element.schedule" [ngModelOptions]="{standalone: true}" (change)="onValueChange(element, $event)" rows="10"></textarea>
+          </mat-form-field>
+          <button type="button" (click)="removeItem(element)" style="float:right" mat-icon-button *ngIf="!element.temp">
+            <mat-icon>close</mat-icon>
+          </button>
+          <button type="button" (click)="addItem(element)" style="float:right" mat-icon-button *ngIf="element.temp">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+      <mat-header-row *matHeaderRowDef="columns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columns;"></mat-row>
+    </mat-table>
+  </form>
+</div>

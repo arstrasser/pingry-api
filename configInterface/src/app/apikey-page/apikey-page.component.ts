@@ -3,14 +3,16 @@ import {MatTableDataSource, MatSnackBar} from '@angular/material';
 import { AppComponent } from '../app.component';
 import { HttpClient } from '@angular/common/http';
 
+const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 @Component({
-  selector: 'app-athletics-page',
-  templateUrl: './athletics-page.component.html',
-  styleUrls: ['./athletics-page.component.css'],
+  selector: 'app-apikey-page',
+  templateUrl: './apikey-page.component.html',
+  //styleUrls: ['./apikey-page.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class AthleticsPageComponent {
-  columns = ["name", "url", "veracross_id"]
+export class ApikeyPageComponent {
+  columns = ["key", "owner", "permissions"]
   data:any = [];
   dataSource = new MatTableDataSource<Element>(this.data);
 
@@ -25,7 +27,7 @@ export class AthleticsPageComponent {
         if(this.data[this.data.length - 1].hasOwnProperty("temp")){
           this.data.pop();
         }
-        this.http.post("/v1/updateAthletics?api_key="+this.app.apiKey, {newJSON:JSON.stringify(this.data)}, {responseType:"text"}).subscribe(res => {
+        this.http.post("/v1/updateKeys?api_key="+this.app.apiKey, {newJSON:JSON.stringify(this.data)}, {responseType:"text"}).subscribe(res => {
           resolve(res);
         }, res => {
           reject(res);
@@ -40,51 +42,71 @@ export class AthleticsPageComponent {
   }
 
   refresh(){
-    this.http.get("/v1/athletics/calendarList?api_key="+this.app.apiKey).subscribe((res) => {
+    this.http.get("/v1/getKeys?api_key="+this.app.apiKey).subscribe((res) => {
       this.app.changed = false;
       this.data = res as any;
       this.update();
     });
   }
 
+  change(){
+    this.update();
+    this.app.changed = true;
+  }
+
   update(){
     if(!this.data[this.data.length - 1].hasOwnProperty("temp")){
-      let newId = this.data[this.data.length - 1].id + 1;
-      this.data.push({id:newId,name:"",url:"", temp:true});
+      this.data.push({key:this.genNewKey(),owner:"",permissions:[], temp:true});
     }
-    this.data.sort((a,b) => {
-      if(a.temp) return 1;
-      a.name.localeCompare(b.name)
-    });
     this.dataSource = new MatTableDataSource<Element>(this.data);
   }
 
-  getDateFromString(str){
-    if(!this.app.checkDate(str)) return new Date();
-    return new Date(str.substring(0,4), parseInt(str.substring(4,6)) - 1, str.substring(6,8));
+  genNewKey() {
+    let loop:boolean;
+    let newKey:string;
+    do {
+      loop = false;
+      newKey = "";
+      for(let i = 0; i < 40; i++){
+        newKey += chars[Math.floor(Math.random()*chars.length)];
+      }
+      for(let i = 0; i < this.data.length - 1; i++){
+        if(this.data[i].key == newKey){
+          loop = true;
+          break;
+        }
+      }
+    }
+    while(loop);
+    return newKey;
   }
 
-  onNameChange(elem){
-    if(elem.temp) return false;
-    this.app.changed = true;
+
+  regenKey(elem){
+    elem.key = this.genNewKey();
+    this.change();
+  }
+
+  onOwnerChange(elem){
+    if(elem.temp) return true;
+    if(elem.owner == ""){
+      this.snackBar.open("Key owner cannot be blank.", "Close", {panelClass:"snackbar-error", duration:3000});
+      return false;
+    }
+    this.change();
     return true;
   }
 
-  onUrlChange(elem){
-    if(elem.temp) return false;
-    this.app.changed = true;
-    return true;
-  }
-
-  onVeraChange(elem){
-    if(elem.temp) return false;
+  onPermChange(elem, event){
+    elem.permissions = event.target.value.split(",");
+    if(elem.temp) return true;
     this.app.changed = true;
     return true;
   }
 
   removeItem(item){
     for(var i = 0; i < this.data.length; i++){
-      if(this.data[i].id == item.id){
+      if(this.data[i].key == item.key){
         this.data.splice(i, 1);
         this.app.changed = true;
         this.update();
@@ -95,10 +117,9 @@ export class AthleticsPageComponent {
   }
 
   addItem(item){
-    if(item.name != "" && item.url != "" && item.veracross_id != ""){
+    if(item.key != "" && item.owner != "" && item.permissions != []){
       delete item.temp;
-      this.app.changed = true;
-      this.update();
+      this.change();
       return true;
     }else{
       this.snackBar.open("Invalid options", "Close", {panelClass:"snackbar-error", duration:3000});
@@ -106,11 +127,4 @@ export class AthleticsPageComponent {
     }
   }
 
-}
-
-class Element {
-  id:number;
-  name:string;
-  url:string;
-  veracross_id:string;
 }
