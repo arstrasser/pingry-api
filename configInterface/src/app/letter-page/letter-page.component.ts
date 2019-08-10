@@ -1,8 +1,6 @@
-import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { AppComponent } from '../app.component';
-import {MatTableDataSource, MatSort, MatSnackBar} from '@angular/material';
-import {ErrorStateMatcher} from '@angular/material/core';
-import {FormControl, FormGroupDirective, NgForm, Validators} from '@angular/forms';
+import {MatTableDataSource, MatSnackBar} from '@angular/material';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
@@ -25,8 +23,6 @@ export class LetterPageComponent {
     {value:"G", title:"G"},
     {value:"R", title:"Review Day"}
   ];
-
-  @ViewChild(MatSort) sort: MatSort;
 
   constructor(public snackBar:MatSnackBar, private http:HttpClient, private app:AppComponent) {
     this.refresh();

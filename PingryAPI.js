@@ -45,6 +45,8 @@ app.get("/testPermission", (req, res, next) => {
   res.status(200).send("Authorized");
 })
 
+app.use(express.static(path.join(__dirname, 'static'), { dotfiles: 'allow' }))
+
 app.use("/configuration/", express.static(path.join(__dirname, 'config_build')))
 
 app.get("/configuration/*", (req, res) => {
