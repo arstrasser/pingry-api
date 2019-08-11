@@ -18,11 +18,9 @@ const lunchURL =            "http://www.sagedining.com/intranet/apps/mb/pubasync
 
 
 //Imports:
-const fs = require('fs');
 const request = require('request');
 const feedParse = require('./feedParse');
 const dfp = require('./dateFunctions');
-const path = require('path');
 const mongojs = require('mongojs');
 
 const letterInfo = [
@@ -576,7 +574,6 @@ exports.PAPI1 = class {
             this.allAthleticEvents = this.allAthleticEvents.concat(this.athleticSchedules[i]);
           }
         }
-        console.log(this.allAthleticEvents.length);
         this.allAthleticEvents.sort((a,b) => {
           if(a.startTime==b.startTime){
             if(a.title == b.title) return a.desc.localeCompare(b.desc);
@@ -955,13 +952,6 @@ exports.PAPI1 = class {
           }
         }
       }
-    });
-
-    counter++;
-    fs.readFile(path.join(__dirname, "..", "..", "JSON_config", "RemoteConfig.json"), (err, data) =>{
-      this.override = JSON.parse(data);
-      counter--;
-      checkIfDone();
     });
 
     makeRequest(announcementsURL+Date.now(), res => {
