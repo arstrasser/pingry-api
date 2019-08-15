@@ -443,6 +443,9 @@ router.post("/updateDDD", auth.mw(["admin"]), (req, res) => {
 router.post("/updateAthletics", auth.mw(["admin"]), (req, res) => {
   try {
     let a = JSON.parse(req.body.newJSON);
+    if(!Array.isArray(a)){
+      return res.status(400).send("Error parsing JSON: Not an array!");
+    }
     for(var i = 0; i < a.length; i++){
       if(!a[i].id || !a[i].name || !(a[i].url || a[i].veracross_id)){
         return res.status(400).send("Error parsing JSON. Element '"+i+"' needs an id, name, and either url or veracross_id");
