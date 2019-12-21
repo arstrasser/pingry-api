@@ -493,6 +493,10 @@ exports.PAPI1 = class {
     var d = dfp.parseStringForDate(str);
     d.setUTCHours(12);
 
+    if(this.menuStartDate === null){
+      return [];
+    }
+
     var timeDiff = d.getTime() - this.menuStartDate.getTime();
     var dayDiff = timeDiff / 1000 / 60 / 60 / 24;
     var dayNumber = (dayDiff+this.menuStartDate.getDay()) % 7;
