@@ -13,8 +13,9 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
     "express-rate-limit": "^3.1.0",
-    "helmet": "^3.9.0",
-    "mongojs": "^2.6.0",
+    "helmet": "^3.21.2",
+    "ldapjs": "^1.0.2",
+    "mongojs": "^3.1.0",
     "prompt": "^1.0.0",
     "request": "^2.88.0"
   }
