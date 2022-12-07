@@ -10,8 +10,8 @@
   "author": "Alex Strasser",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.2",
-    "express": "^4.16.3",
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
     "express-rate-limit": "^3.1.0",
     "helmet": "^3.21.2",
     "ldapjs": "^1.0.2",
